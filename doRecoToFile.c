@@ -276,7 +276,7 @@ void SetVariables(RecoHelper *reco,
                         reco->theDoPenalized     = true;
                         reco->thePenalizedIter   = 100;
                         reco->theUnpenalizedIter = 100;
-                        reco->thePixelSpacing    = std::stoi(splitLine[1]); // in cm
+                        reco->thePixelSpacing    = std::stof(splitLine[1]); // in cm
                         reco->NSIPMs             = std::stoi(splitLine[0]);
 
                         reco->theOpRefPath = opRefTablePath;

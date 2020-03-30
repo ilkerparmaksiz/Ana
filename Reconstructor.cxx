@@ -47,6 +47,7 @@ namespace majreco {
         // Initialize histogram and gaussian
         float pixelSpacing = (*fPixelVec).front().Size();
         size_t n = 2 * fDiskRadius / pixelSpacing - 1; // assuming pixel is in the center
+
         if (!fMLHist)
             fMLHist = new TH2F("RecoPositon", "RecoPositon", n, -fDiskRadius-diff, fDiskRadius+diff, n, -fDiskRadius-diff, diff+fDiskRadius);
         if (!fMLGauss) fMLGauss = new TF2("g", "bigaus", -fDiskRadius-diff, fDiskRadius+diff, -fDiskRadius-diff, fDiskRadius+diff);
@@ -252,7 +253,7 @@ namespace majreco {
             auto yBin = fMLHist->GetYaxis()->FindBin(pixel.Y());
             fMLHist->SetBinContent(xBin, yBin, content);
             // For plotting
-            //if (content < 0)fMLHist->SetBinContent(xBin, yBin, 0);
+            if (content < 3)fMLHist->SetBinContent(xBin, yBin, 3);
         }
     }
 

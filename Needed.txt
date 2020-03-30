@@ -1,1 +1,7 @@
-sudo pip3 install numpy matplotlib
+#Required
+python 2.7
+Root 6.18/04
+
+#Installation Needed
+sudo pip install numpy matplotlib
+sudo apt-get install libboost-all-dev

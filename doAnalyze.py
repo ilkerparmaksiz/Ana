@@ -53,7 +53,7 @@ def main():
     SmallWheel = {
         "FilePath"          :   FilePath,
         "OutPath"           :   "smallWheelOutput",
-        "Analyze"           :   1,
+        "Analyze"           :   0,
         "Reconst"           :   1,
         "pixelPath"         :   "production/5mm/pixelization.txt",
         "TablePath"         :   "production/5mm/16_sipm/splinedOpRefTable.txt",

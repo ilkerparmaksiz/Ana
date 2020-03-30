@@ -226,7 +226,7 @@ void Reconstruct( RecoHelper  *recoHelper, Cfunctions *fun)
         // Write the reconstructed image
         std::string FileName;
         FileName=recoHelper->ThePath+"Reco_"+recoHelper->FileName+".root";
-        std::cout <<FileName<<std::endl;
+        //std::cout <<FileName<<std::endl;
         TFile f(FileName.c_str(), "UPDATE");
         fun->f=&f;
         std::string Chi2Name=recoHelper->ImageName+"_Chi2";
@@ -369,7 +369,7 @@ void doRecoToFile(std::string pixelizationPath, std::string opRefTablePath,std::
     if(d1.AnaCounts.size()>0) {
         recoHelper.ImageName = "Ana";
         recoHelper.theData = d1.AnaCounts;
-        Reconstruct(&recoHelper,&fun);
+       // Reconstruct(&recoHelper,&fun);
     }
     if(d1.FilteredMap.size()>0)
     {

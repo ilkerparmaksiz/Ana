@@ -213,7 +213,7 @@ def Analyze(FilePath,OutPath,Analyze,Reconst,pixelPath,TablePath,Radius,sipmGain
     Values      = NumofSIPMsandSpace(TablePath)
     NSIPM       = Values[0]
     Space       = Values[1]
-    CombinedValues=NSIPM +"_" + Space + "_" + str(Radius)
+    CombinedValues=NSIPM + "_" + Space + "_" + str(Radius)
 
     if (Result==-1):
         Files=ReadFiles(FilePath,"root") # Collects the files to analyze with root extension

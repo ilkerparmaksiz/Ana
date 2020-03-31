@@ -25,7 +25,7 @@ FilePath="/home/ilker/Desktop/Analysis/Tests/Mothership_02_24_2020/"
 #FilePath="/media/ilker/DATA/Mothership/data/8arg/"
 
 #Small Wheel Data
-FilePath="/home/ilker/Desktop/Analysis/Second_Data/Nov_21_2019"
+#FilePath="/home/ilker/Desktop/Analysis/Second_Data/Nov_21_2019"
 
 def main():
     ''' FilePath            =>  Either a path to root file or to root files
@@ -74,7 +74,7 @@ def main():
     }
 
     # For Analyzing Multiple or Single Files
-    fun.Analyze(**SmallWheel)
+    fun.Analyze(**MotherShip)
 
 
 if __name__=="__main__":

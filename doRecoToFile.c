@@ -60,9 +60,9 @@ struct TTreeHelp{
     std::vector<unsigned>AnaCounts;
     std::vector<unsigned>FilteredCounts;
     std::vector<unsigned>DeadSIPM;
-    std::vector<int> ts0sub;
-    std::vector<int>Board1ts0;
-    std::vector<int>Board2ts0;
+    std::vector<UInt_t> ts0sub;
+    std::vector<UInt_t>Board1ts0;
+    std::vector<UInt_t>Board2ts0;
 };
 
 // Protos
@@ -305,21 +305,6 @@ void ReadDataTree(std::string DataPath,struct TTreeHelp *htr,struct Data *d1)
     if (!tr) return;
 
 
-    /*Int_t eventID;
-    Int_t nsipms;
-    Int_t AnaData[nsipms];// Data witout the dead SIPMs
-    Int_t ActData[nsipms];
-
-    tr->SetBranchAddress("eventID", &eventID);
-    tr->SetBranchAddress("nsipms", &nsipms);
-    tr->SetBranchAddress("AnaCounts",&AnaData);
-    tr->SetBranchAddress("ActCounts",&ActData);
-    tr->SetBranchAddress("ThCounts",&d1.FilteredCounts);
-    tr->SetBranchAddress("DeadSIPMs",&d1.DeadSIPM);
-    tr->SetBranchAddress("ts0_Board1",&d1.Board1ts0);
-    tr->SetBranchAddress("ts0_Board2",&d1.Board2ts0);
-    tr->SetBranchAddress("ts0Sub",&d1.ts0sub);
-    */
     tr->SetBranchAddress("TTreeHelp",&htr);
     Long64_t nentries = tr->GetEntries();
 

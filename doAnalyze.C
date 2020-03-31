@@ -7,10 +7,24 @@ std::vector<unsigned> sipmDead;
 std::vector<unsigned> febChannelsVec ;
 std::vector<float> sipmGains;
 std::vector<float> DarkCounts;
+
+typedef std::map<UInt_t,std::vector<UShort_t>> ts0ChgMap ;
+typedef const std::pair<const UInt_t,std::vector<UShort_t>> ts0ChgPair ;
+
 Int_t eventID                       = 0;
 UChar_t board1Mac                   = 0x15;
 UChar_t board2Mac                   = 0x55;
 
+
+
+struct info{
+    UChar_t mac5;
+    ts0ChgMap DataMap;
+
+};
+
+ts0ChgMap QualBoard1Data;
+ts0ChgMap QualBoard2Data;
 // Adjustable Variables
 const unsigned ledTriggers          = 132000;
 std::string DeadSipmPath            = "files/DEAD_SIPMS.txt";
@@ -29,6 +43,7 @@ struct sAna {
     // Get the ADC integrals
     std::vector<unsigned> theCounts;
     std::vector<unsigned> FilteredCounts;
+    std::vector<unsigned> TimeCounts;
     std::vector<unsigned> sipmDead;
     std::vector<unsigned> ActualCounts;
     std::string FileName;
@@ -46,8 +61,8 @@ struct sAna {
     bool MotShipData ;                          // if you analyze the mothership
     int Th ;                                    // Thresshold to filter some events
     int NofCoinc ;                              // Max # of SIPMs in Coincidence  With Specific Th
-    std::vector<int> Board1ts0;
-    std::vector<int> Board2ts0;
+    std::vector<UInt_t> Board1ts0;
+    std::vector<UInt_t> Board2ts0;
     std::vector<int> ts0Substract;
 
     UShort_t chg[32];
@@ -70,10 +85,11 @@ struct TTreeHelp{
     std::vector<unsigned>ActualCounts;
     std::vector<unsigned>AnaCounts;
     std::vector<unsigned>FilteredCounts;
+    std::vector<unsigned>TimeCounts;
     std::vector<unsigned>DeadSIPM;
     std::vector<int> ts0sub;
-    std::vector<int>Board1ts0;
-    std::vector<int>Board2ts0;
+    std::vector<UInt_t>Board1ts0;
+    std::vector<UInt_t>Board2ts0;
 };
 
 /* Save Analyzed data to a file */
@@ -184,14 +200,16 @@ void fDark (std::string Path, std::vector<float> &Dark)
         std::cout<<"Dark counts  could not obtained from the file"<<std::endl;
 
 }
-std::vector<int> fSubTs0(std::vector<int>B1ts0,std::vector<int> B2ts0)
+std::vector<int>fSubTs0(std::vector<UInt_t>B1ts0,std::vector<UInt_t> B2ts0)
 {
     int Size=0;
     std::vector<int> v;
     if(B1ts0.size()>B2ts0.size()) Size=B2ts0.size();else Size=B1ts0.size();
-    for (int i =0; i<Size;i++)
-        v.push_back((B2ts0.at(i)-B1ts0.at(i)));
-
+    Int_t Result;
+    for (int i =0; i<Size;i++) {
+        Result=B2ts0.at(i) - B1ts0.at(i);
+        v.push_back(Result);
+    }
     return v;
 }
 
@@ -345,6 +363,99 @@ void fCoinLoop(struct sAna &h)
 
     }
 }
+
+
+void fTimeAnalysis(struct info *Board1,struct info *Board2)
+{
+    struct info *First;
+    struct info *Second;
+
+    struct special {
+        Int_t Board1ts0;
+        Int_t Board2ts0;
+        std::vector<UShort_t> Board1chg;
+        std::vector<UShort_t> Board2chg;
+        Int_t Diffts0;
+        info *First;
+        info *Second;
+
+        void add(ts0ChgPair item1, ts0ChgPair item2)
+        {
+            if(board1Mac==First->mac5)
+            {
+                Board1ts0=item1.first;
+                Board2ts0=item2.first;
+
+                Board1chg=item1.second;
+                Board2chg=item2.second;
+
+            }else if(board1Mac==Second->mac5){
+                Board1ts0=item2.first;
+                Board2ts0=item1.first;
+
+
+                Board1chg=item2.second;
+                Board2chg=item1.second;
+            }
+            Int_t result=item1.first-item2.first;
+            Diffts0=std::abs(result);
+
+
+        }
+    };
+
+
+
+
+    struct special temp;
+    struct special Current;
+
+
+    if(Board1->DataMap.size()>Board2->DataMap.size())
+    {
+        First=Board2;
+        Second=Board1;
+    }else if (Board2->DataMap.size()>Board1->DataMap.size())
+    {
+        First=Board1;
+        Second=Board2;
+    }
+
+    temp.First=First;
+    temp.Second=Second;
+    Current.First=First;
+    Current.Second=Second;
+
+    unsigned int Count(0);
+    unsigned int EventID(0);
+
+    if(First->DataMap.size()==0 || Second->DataMap.size()==0) {std::cout<<"Timing Maps are empty"<<std::endl ;return;}
+
+    for (auto const &item1     : First->DataMap) {
+        for (auto const &item2 : Second->DataMap)
+        {
+            if(Count==0) {
+                temp.add(item1,item2);
+                Count++;
+                continue;
+            }
+            Current.add(item1,item2);
+            if(Current.Diffts0<temp.Diffts0)
+                temp=Current;
+        }
+        if(temp.Diffts0<200000000)
+        {
+            QualBoard1Data.emplace(temp.Diffts0,temp.Board1chg);
+            QualBoard2Data.emplace(temp.Diffts0,temp.Board2chg);
+            Second->DataMap.erase(Second->DataMap.begin());
+        }
+
+    }
+
+    std::cout<<QualBoard1Data.size()<<std::endl;
+    std::cout<<QualBoard2Data.size()<<std::endl;
+
+}
 void fWriteToFile(struct sAna hAna)
 {
     std::fstream outfile(hAna.theEvdPath, std::ios::out | std::ios::in | std::ios::app);
@@ -362,6 +473,7 @@ void fWriteToFile(struct sAna hAna)
 }
 
 
+
 //------------------------------------------------------------------------
 void doAnalyze( std::string ptreepath,
                 std::string pFileName,
@@ -376,6 +488,9 @@ void doAnalyze( std::string ptreepath,
     std::cout << "\nAnalyzing Following File:  " + pFileName + ".root \n";
 
     struct sAna hAna;
+    struct info Board1_info;
+    struct info Board2_info;
+
     std::vector<std::string> splitLine;
     boost::split(splitLine,pCombined,boost::is_any_of("_"));
 
@@ -401,9 +516,10 @@ void doAnalyze( std::string ptreepath,
         febChannelsVec = {6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21};
         n=1;
     }
-
     std::vector<unsigned> theCounts(n * febChannelsVec.size(), 0.);
     std::vector<unsigned> FilteredCounts(n * febChannelsVec.size(), 0.);
+    std::vector<unsigned> TimedCounts(n * febChannelsVec.size(), 0.);
+
     TFile theFile(hAna.theTreePath.c_str(), "READ");
     TTree* theTree  = (TTree*)theFile.Get("mppc");
 
@@ -423,8 +539,8 @@ void doAnalyze( std::string ptreepath,
 
     hAna.theCounts=theCounts;
     hAna.FilteredCounts=FilteredCounts;
+    hAna.TimeCounts=TimedCounts;
     //if (hAna.MotShipData) fNormalize (pFileName,theTree,febChannelsVec.size());
-
 
     for (Long64_t jentry=0; jentry<hAna.nentries; jentry++)
     {
@@ -435,18 +551,38 @@ void doAnalyze( std::string ptreepath,
         if(hAna.Cut) fCoinLoop(hAna);
 
         if(hAna.MotShipData) {
-            if (hAna.mac5 == board2Mac) hAna.Board2ts0.push_back(hAna.ts0);
-            else hAna.Board1ts0.push_back(hAna.ts0); // Get The Time info
+            std::vector<UShort_t> vchg(std::begin(hAna.chg),std::end(hAna.chg));
+
+            if (hAna.mac5 == board2Mac) {
+
+                hAna.Board2ts0.push_back(hAna.ts0);
+                Board2_info.DataMap.emplace(ts0ChgPair(hAna.ts0,vchg));
+                Board2_info.mac5=board2Mac;
+
+            }
+            else{
+
+                hAna.Board1ts0.push_back(hAna.ts0);
+                Board1_info.DataMap.emplace(ts0ChgPair(hAna.ts0,vchg));
+                Board2_info.mac5=board1Mac;
+
+
+            } // Get The Time info
+            fTimeAnalysis(&Board1_info,&Board2_info);
         }
     }
 
     hAna.ActualCounts=hAna.theCounts;
-
     fApplyGain(hAna.theCounts,Condition);
     fApplyGain(hAna.FilteredCounts,FilterCondition);
+    fApplyGain(hAna.TimeCounts,FilterCondition);
+
+
 
     // Call the function to substract two vectors
-    if(hAna.MotShipData) hAna.ts0Substract=(fSubTs0(hAna.Board1ts0,hAna.Board2ts0));
+    if(hAna.MotShipData) {
+        hAna.ts0Substract=fSubTs0(hAna.Board1ts0,hAna.Board2ts0);
+    }
 
 
     if(hAna.SaveFile ) {
@@ -459,6 +595,7 @@ void doAnalyze( std::string ptreepath,
         htr.Board1ts0         = hAna.Board1ts0;
         htr.Board2ts0         = hAna.Board2ts0;
         htr.FilteredCounts    = hAna.FilteredCounts;
+        htr.TimeCounts        = hAna.TimeCounts;
         htr.eventID            = eventID;
         hUp.MotShipData       = hAna.MotShipData;
         hUp.theOutputPath     = hAna.theOutputPath;

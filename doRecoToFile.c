@@ -55,14 +55,16 @@ struct Data{
 
 struct TTreeHelp{
     Int_t eventID;
-    Int_t nsipms;
+    //Int_t nsipms;
     std::vector<unsigned>ActualCounts;
     std::vector<unsigned>AnaCounts;
     std::vector<unsigned>FilteredCounts;
-    std::vector<unsigned>DeadSIPM;
-    std::vector<UInt_t> ts0sub;
+    std::vector<unsigned>DiffTime;
+    /*std::vector<unsigned>DeadSIPM;
+    std::vector<int> ts0sub;
     std::vector<UInt_t>Board1ts0;
     std::vector<UInt_t>Board2ts0;
+     */
 };
 
 // Protos
@@ -75,13 +77,13 @@ void Reconstruct(RecoHelper *recoHelper,Cfunctions *fun);
  * @brief Method to load pixelization scheme.
  *
  */
-void LoadPixelization(RecoHelper& recoHelper)
+void LoadPixelization(RecoHelper *recoHelper)
 {
-    if (!recoHelper.thePixelVec) recoHelper.thePixelVec = std::make_shared<std::vector<majutil::Pixel>>();
-    recoHelper.thePixelVec->clear();
+    if (!recoHelper->thePixelVec) recoHelper->thePixelVec = std::make_shared<std::vector<majutil::Pixel>>();
+    recoHelper->thePixelVec->clear();
 
     // Make pixels for each position
-    std::ifstream f(recoHelper.thePixelPath.c_str());
+    std::ifstream f(recoHelper->thePixelPath.c_str());
     if (!f.is_open())
     {
         std::cerr << "PixelTable::Initialize() Error! Cannot open pixelization file!\n";
@@ -134,32 +136,32 @@ void LoadPixelization(RecoHelper& recoHelper)
         if (x <  0 && y <  0) thetaDeg = 180 + thetaDeg;
         if (x >= 0 && y <  0) thetaDeg = 360 - thetaDeg;
 
-        recoHelper.thePixelVec->emplace_back(pixelID, x, y, r, thetaDeg);
-        recoHelper.thePixelVec->back().SetSize(recoHelper.thePixelSpacing);
+        recoHelper->thePixelVec->emplace_back(pixelID, x, y, r, thetaDeg);
+        recoHelper->thePixelVec->back().SetSize(recoHelper->thePixelSpacing);
     }
 
     f.close();
 
     // Sort
-    std::sort( recoHelper.thePixelVec->begin(), recoHelper.thePixelVec->end(), [](const majutil::Pixel& left, const majutil::Pixel& right) { return left.ID() < right.ID(); } );
+    std::sort( recoHelper->thePixelVec->begin(), recoHelper->thePixelVec->end(), [](const majutil::Pixel& left, const majutil::Pixel& right) { return left.ID() < right.ID(); } );
+    std::cout << "Initialized " << recoHelper->thePixelVec->size() << " " << min << "x" << min << "cm2 pixels...\n";
 
-    std::cout << "Initialized " << recoHelper.thePixelVec->size() << " " << min << "x" << min << "cm2 pixels...\n";
 }
 
 /**
  * @brief Method to load lookup table.
  *
  */
-void LoadOpRefTable(RecoHelper& recoHelper)
+void LoadOpRefTable(RecoHelper *recoHelper)
 {
     // Make sure pixels have been initialized
-    assert(recoHelper.thePixelVec->size() != 0 && "Pixels have not been initialized!");
+    assert(recoHelper->thePixelVec->size() != 0 && "Pixels have not been initialized!");
 
     // Read in reference table
-    std::ifstream f(recoHelper.theOpRefPath.c_str());
+    std::ifstream f(recoHelper->theOpRefPath.c_str());
     if (!f.is_open())
     {
-        std::cout << "PixelTable::LoadReferenceTable() Error! Cannot open reference table file! " << recoHelper.theOpRefPath.c_str() << "\n";
+        std::cout << "PixelTable::LoadReferenceTable() Error! Cannot open reference table file! " << recoHelper->theOpRefPath.c_str() << "\n";
         exit(1);
     }
     std::cout << "Reading reference table file...\n";
@@ -192,7 +194,7 @@ void LoadOpRefTable(RecoHelper& recoHelper)
         float    prob    = std::stof(string3);
 
         // This assumes the pixels have been ordered
-        recoHelper.thePixelVec->at(pixelID-1).AddReference(mppcID, prob);
+        recoHelper->thePixelVec->at(pixelID-1).AddReference(mppcID, prob);
     }
     f.close();
 }
@@ -204,7 +206,6 @@ void LoadOpRefTable(RecoHelper& recoHelper)
 void Reconstruct( RecoHelper  *recoHelper, Cfunctions *fun)
 {
     cout << "\nIn reconstruct...\n";
-
     // Initialize the reconstructor
     majreco::Reconstructor theReconstructor(recoHelper->theData, recoHelper->thePixelVec, recoHelper->theDiskRadius);
     if (recoHelper->theMethod == "emml")
@@ -216,6 +217,7 @@ void Reconstruct( RecoHelper  *recoHelper, Cfunctions *fun)
     }
     else
         theReconstructor.DoChi2(recoHelper->theUnpenalizedIter);
+
         theReconstructor.Dump();
         std::vector<Double_t> EstValues;
         EstValues=theReconstructor.EstimatedValuesD();
@@ -226,7 +228,7 @@ void Reconstruct( RecoHelper  *recoHelper, Cfunctions *fun)
         // Write the reconstructed image
         std::string FileName;
         FileName=recoHelper->ThePath+"Reco_"+recoHelper->FileName+".root";
-        //std::cout <<FileName<<std::endl;
+        std::cout <<FileName<<std::endl;
         TFile f(FileName.c_str(), "UPDATE");
         fun->f=&f;
         std::string Chi2Name=recoHelper->ImageName+"_Chi2";
@@ -291,10 +293,13 @@ void SetVariables(RecoHelper *reco,
                         else fun->dif                 = 10;
                         fun->FileName            = FileName;
                         fun->TrueFilePath        = TrueFile;
+                        LoadPixelization(reco); //This comes before the LoadOpRefTable(reco)
+                        LoadOpRefTable(reco);
+
 
                   }
 
-void ReadDataTree(std::string DataPath,struct TTreeHelp *htr,struct Data *d1)
+/*void ReadDataTree(std::string DataPath,struct TTreeHelp *htr,struct Data *d1)
 {
 
     auto f  = TFile::Open(DataPath.c_str(),"READ");
@@ -311,12 +316,14 @@ void ReadDataTree(std::string DataPath,struct TTreeHelp *htr,struct Data *d1)
     for (Long64_t jentry=0; jentry<nentries; jentry++)
     {
         tr->GetEvent(jentry);
+
         for(unsigned i=0;i<htr->nsipms;i++)
         {
             if(htr->AnaCounts.at(i)==0)
-                d1->AnaCounts.emplace(i,0);
+                d1->AnaCounts.emplace(i,-1);
             else
                 d1->AnaCounts.emplace(i,htr->AnaCounts.at(i));
+
             d1->ActCounts.emplace(i,htr->ActualCounts.at(i));
             d1->FilteredMap.emplace(i,htr->FilteredCounts.at(i));
         }
@@ -325,42 +332,70 @@ void ReadDataTree(std::string DataPath,struct TTreeHelp *htr,struct Data *d1)
 
 
 }
+*/
+void ReadMultiData(std::string DataPath,struct TTreeHelp *htr,struct Data *d1, struct RecoHelper *recoHelper, struct Cfunctions *fun)
+{
+
+    auto f  = TFile::Open(DataPath.c_str(),"READ");
+
+    if(!f) return;
+    TTree* tr ;
+    f->GetObject("ana",tr);
+    if (!tr) return;
+
+
+    tr->SetBranchAddress("TTreeHelp",&htr);
+    Long64_t nentries = tr->GetEntries();
+
+    for (Long64_t jentry=0; jentry<nentries; jentry++) {
+        tr->GetEvent(jentry);
+        d1->ActCounts.clear();
+        std::cout << "Event ID " << htr->eventID << std::endl;
+        for (unsigned i = 0; i < recoHelper->NSIPMs; i++) {
+            d1->ActCounts.emplace(i, htr->ActualCounts.at(i));
+            d1->FilteredMap.emplace(i, htr->FilteredCounts.at(i));
+            d1->AnaCounts.emplace(i, htr->AnaCounts.at(i));
+        }
+
+
+        if (d1->ActCounts.size() > 0) {
+            recoHelper->ImageName = "Act_" + std::to_string(htr->eventID) + "_";
+            recoHelper->theData = d1->ActCounts;
+            Reconstruct(recoHelper, fun);
+            d1->ActCounts.clear();
+            htr->ActualCounts.clear();
+
+        }
+        if (d1->AnaCounts.size() > 0) {
+            recoHelper->ImageName = "Ana" + std::to_string(htr->eventID) + "_";;
+            recoHelper->theData = d1->AnaCounts;
+            Reconstruct(recoHelper,fun);
+            d1->AnaCounts.clear();
+            htr->AnaCounts.clear();
+        }
+        if (d1->FilteredMap.size() > 0) {
+            recoHelper->ImageName = "FillTered" + std::to_string(htr->eventID) + "_";
+            recoHelper->theData = d1->FilteredMap;
+            Reconstruct(recoHelper, fun);
+            d1->FilteredMap.clear();
+            htr->FilteredCounts.clear();
+
+        }
+
+
+    }
+
+}
 
 /********************************/
 void doRecoToFile(std::string pixelizationPath, std::string opRefTablePath,std::string ThePath,std::string FileName,std::string TrueFile,std::string Combined)
 {
-
-
     RecoHelper recoHelper;
     Cfunctions fun;
     struct TTreeHelp htr;
     Data d1;
     dataPath                = ThePath+"ana_"+FileName+".root";
     SetVariables(&recoHelper,&fun,pixelizationPath,opRefTablePath,ThePath,FileName,TrueFile,Combined);// Get other Variables
-    ReadDataTree(dataPath,&htr,&d1);
-
-    // Load pixelization
-    LoadPixelization(recoHelper);
-    // Load opRef
-    LoadOpRefTable(recoHelper);
-    // Reconstruct
-
-    if(d1.ActCounts.size()>0){
-        recoHelper.ImageName = "Act";
-        recoHelper.theData = d1.ActCounts;
-        Reconstruct(&recoHelper,&fun);
-
-    }
-    if(d1.AnaCounts.size()>0) {
-        recoHelper.ImageName = "Ana";
-        recoHelper.theData = d1.AnaCounts;
-       // Reconstruct(&recoHelper,&fun);
-    }
-    if(d1.FilteredMap.size()>0)
-    {
-        recoHelper.ImageName = "Th";
-        recoHelper.theData = d1.FilteredMap;
-        Reconstruct(&recoHelper,&fun);
-    }
+    ReadMultiData( dataPath,&htr,&d1,&recoHelper,&fun);
 
 }

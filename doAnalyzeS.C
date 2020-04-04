@@ -3,16 +3,14 @@
 #include <TCanvas.h>
 #include "TTree.h"
 #include <boost/algorithm/string.hpp>
-using namespace std;
-
-vector<unsigned> sipmDead;
-vector<unsigned> febChannelsVec ;
-vector<float> sipmGains;
-vector<float> DarkCounts;
+std::vector<unsigned> sipmDead;
+std::vector<unsigned> febChannelsVec ;
+std::vector<float> sipmGains;
+std::vector<float> DarkCounts;
 
 
-typedef map<UInt_t,vector<UShort_t>> ts0ChgMap ;
-typedef const pair<const UInt_t,vector<UShort_t>> ts0ChgPair ;
+typedef std::map<UInt_t,std::vector<UShort_t>> ts0ChgMap ;
+typedef const std::pair<const UInt_t,std::vector<UShort_t>> ts0ChgPair ;
 
 UChar_t board1Mac                   = 0x15;
 UChar_t board2Mac                   = 0x55;
@@ -29,54 +27,53 @@ ts0ChgMap QualBoard1Data;
 ts0ChgMap QualBoard2Data;
 // Adjustable Variables
 const unsigned ledTriggers          = 132000;
-string DeadSipmPath            = "files/DEAD_SIPMS.txt";
-string DarkPath                = "files/Dark.txt";
-string ThePath;
-string theOutputPath;
-string theTreePath;
-string sipmGainPath;
-vector<bool> Condition         = {1, 0, 0}; //1 is on, 0 is off; Gain,LEDFilter,DarkCount
-vector<bool> FilterCondition   = {1, 0, 0}; //1 is on, 0 is off; Gain,LEDFilter,DarkCount
+std::string DeadSipmPath            = "files/DEAD_SIPMS.txt";
+std::string DarkPath                = "files/Dark.txt";
+std::string ThePath;
+std::string theOutputPath;
+std::string theTreePath;
+std::string sipmGainPath;
+std::vector<bool> Condition         = {1, 0, 0}; //1 is on, 0 is off; Gain,LEDFilter,DarkCount
+std::vector<bool> FilterCondition   = {1, 0, 0}; //1 is on, 0 is off; Gain,LEDFilter,DarkCount
 bool WriteToTextFile                = false; // Allows to Write Number of Entries to text File
 UInt_t MaxTimeDifference            = 200000000; //200 us
-Int_t  EventLimit                   = 0; // will limit events to 5
+Int_t  EventLimit                   = 1000; // will limit events to 5
 
 //Applying Some Conditions such as Gain, LEDFilter and DarkCount Substraction. 0 is off
 struct sAna {
     // Get the ADC integrals
-    vector<unsigned> theCounts;
-    vector<unsigned> FilteredCounts;
-    vector<unsigned> sipmDead;
-    vector<unsigned> ActualCounts;
-    vector<unsigned> DiffTime;
-
-    string FileName;
-    string ThePath;
-    string theOutputPath;
-    string theTreePath;
-    string sipmGainPath;
-    string theEvdPath              = ThePath + "data.txt";
+    std::vector<unsigned> theCounts;
+    std::vector<unsigned> FilteredCounts;
+    std::vector<unsigned> sipmDead;
+    std::vector<unsigned> ActualCounts;
+    std::vector<unsigned> DiffTime;
+    std::string FileName;
+    std::string ThePath;
+    std::string theOutputPath;
+    std::string theTreePath;
+    std::string sipmGainPath;
+    std::string theEvdPath              = ThePath + "data.txt";
 
     int NSIPMs;
     unsigned nentries;
     bool SaveFile;                              //Saving Results to File
     bool Cut;                                   //Threshold Cut is Active
     bool WriteToTextFile;                        // Allows to Write Number of Entries to text File
-    bool MotShipData=true;                          // if you analyze the mothership
+    bool MotShipData                    = true;                          // if you analyze the mothership
     int Th ;                                    // Thresshold to filter some events
     int NofCoinc ;                              // Max # of SIPMs in Coincidence  With Specific Th
-    vector<UInt_t> Board1ts0;
-    vector<UInt_t> Board2ts0;
-    vector<int> ts0Substract;
+    std::vector<UInt_t> Board1ts0;
+    std::vector<UInt_t> Board2ts0;
+    std::vector<int> ts0Substract;
 
     UShort_t chg[32];
-    vector<UShort_t> Board1chg;
-    vector<UShort_t> Board2chg;
+    std::vector<UShort_t> Board1chg;
+    std::vector<UShort_t> Board2chg;
     UChar_t  mac5;
     UInt_t   ts0;
-    UInt_t   count=0;
-    bool TimedEvents=true;
-    bool   AveragedEvents=false;
+    UInt_t   count                      = 0;
+    bool TimedEvents                    = true;
+    bool   AveragedEvents               = false;
     int n                               = 2;
 
 
@@ -87,7 +84,7 @@ struct sAna {
 
 // Variables to pass for Update
 struct sUpdateHelper{
-    string theOutputPath;
+    std::string theOutputPath;
     bool MotShipData;
 
 };
@@ -95,16 +92,14 @@ struct sUpdateHelper{
 struct TTreeHelp{
     Int_t eventID;
     //Int_t nsipms;
-
-    vector<unsigned>ActualCounts;
-    vector<unsigned>AnaCounts;
-    vector<unsigned>FilteredCounts;
-    vector<unsigned>DiffTime;
-
-    /*vector<unsigned>DeadSIPM;
-    vector<int> ts0sub;
-    vector<UInt_t>Board1ts0;
-    vector<UInt_t>Board2ts0;
+    std::vector<unsigned>ActualCounts;
+    std::vector<unsigned>AnaCounts;
+    std::vector<unsigned>FilteredCounts;
+    std::vector<unsigned>DiffTime;
+    /*std::vector<unsigned>DeadSIPM;
+    std::vector<int> ts0sub;
+    std::vector<UInt_t>Board1ts0;
+    std::vector<UInt_t>Board2ts0;
      */
 };
 
@@ -133,27 +128,27 @@ void fUpdate(sUpdateHelper *help,TTreeHelp *htr)
 
 
 // Getting the gains from the file
-void fgetSIPMGains (string Path,vector<float> &Gains)
+void fgetSIPMGains (std::string Path,std::vector<float> &Gains)
 {
-    ifstream file(Path);
-    string str;
-    while (getline(file,str))
-        Gains.push_back(stof(str));
+    std::ifstream file(Path);
+    std::string str;
+    while (std::getline(file,str))
+        Gains.push_back(std::stof(str));
     if(Gains.size()>0)
-        cout<<"SIPM gains are obtained from the file"<<endl;
+        std::cout<<"SIPM gains are obtained from the file"<<std::endl;
     else
-        cout<<"SIPM gains could not obtained from the file"<<endl;
+        std::cout<<"SIPM gains could not obtained from the file"<<std::endl;
 }
 //Reading the Dead Channels
-void fDeadChs (string Path, vector<unsigned> &Dead)
+void fDeadChs (std::string Path, std::vector<unsigned> &Dead)
 {
-    ifstream file(Path);
-    string str;
-    while (getline(file,str)) Dead.push_back(stoi(str));
+    std::ifstream file(Path);
+    std::string str;
+    while (std::getline(file,str)) Dead.push_back(std::stoi(str));
 
-    if(Dead.size()>0) cout<<"Dead SIPM are obtained from the file"<<endl;
+    if(Dead.size()>0) std::cout<<"Dead SIPM are obtained from the file"<<std::endl;
     else {
-        cout << "No Dead SIPMs" << endl;
+        std::cout << "No Dead SIPMs" << std::endl;
         Dead.push_back(-9999);
     }
 
@@ -163,32 +158,32 @@ void Clear(struct sAna *h)
 
     h->DiffTime.clear();
 
-    fill(h->FilteredCounts.begin(), h->FilteredCounts.end(), 0.0);
-    fill(h->theCounts.begin(), h->theCounts.end(), 0.0);
-    fill(h->ActualCounts.begin(), h->ActualCounts.end(), 0.0);
+    std::fill(h->FilteredCounts.begin(), h->FilteredCounts.end(), 0.0);
+    std::fill(h->theCounts.begin(), h->theCounts.end(), 0.0);
+    std::fill(h->ActualCounts.begin(), h->ActualCounts.end(), 0.0);
 
 
 }
-bool fisSIPMGood(int SIPM,vector<unsigned>DeadSipm)
+bool fisSIPMGood(int SIPM,std::vector<unsigned>DeadSipm)
 {
-    if (find(DeadSipm.begin(),DeadSipm.end(),SIPM)==DeadSipm.end())
+    if (std::find(DeadSipm.begin(),DeadSipm.end(),SIPM)==DeadSipm.end())
         return true;
     else return false;
 
 }
 
-bool is_empty(ifstream& pFile)
+bool is_empty(std::ifstream& pFile)
 {
-    return pFile.peek() == ifstream::traits_type::eof();
+    return pFile.peek() == std::ifstream::traits_type::eof();
 }
 bool LimitEvents(unsigned int EventID)
 {
     if(EventLimit!=0) {
         if (EventID == EventLimit){
-            cout<<"Cutting the Events short at " <<EventID<<endl;
+            std::cout<<"Cutting the Events short at " <<EventID<<std::endl;
             return true;
         }
-    }else cout<<"EventLimit is zero"<<endl;
+    }else std::cout<<"EventLimit is zero"<<std::endl;
 
     return false;
 
@@ -198,7 +193,7 @@ void fRunUpdate(sAna *hAna)
     struct TTreeHelp htr={0};
 
     if(hAna->SaveFile ) {
-        cout << "Updating the file ...\n";
+        std::cout << "Updating the file ...\n";
 
         htr.ActualCounts      = hAna->ActualCounts;
         htr.FilteredCounts    = hAna->FilteredCounts;
@@ -217,7 +212,7 @@ void fRunUpdate(sAna *hAna)
         int counter=0;
         for (unsigned spm = 0; spm < nsipms; spm++)
         {
-            if(find(hAna->sipmDead.begin(),hAna->sipmDead.end(),spm)!=hAna->sipmDead.end())
+            if(std::find(hAna->sipmDead.begin(),hAna->sipmDead.end(),spm)!=hAna->sipmDead.end())
                 htr.AnaCounts.push_back(0);
             else
                 htr.AnaCounts.push_back(htr.ActualCounts.at(spm));
@@ -230,24 +225,24 @@ void fRunUpdate(sAna *hAna)
     }
 
 }
-void fDark (string Path, vector<float> &Dark)
+void fDark (std::string Path, std::vector<float> &Dark)
 {
-    ifstream file(Path);
-    string str;
-    while (getline(file,str)) {
-        Dark.push_back(stof(str));
+    std::ifstream file(Path);
+    std::string str;
+    while (std::getline(file,str)) {
+        Dark.push_back(std::stof(str));
     }
     if(Dark.size()>0) {
-        cout << "Dark counts are obtained from the file" << endl;
+        std::cout << "Dark counts are obtained from the file" << std::endl;
     }
     else
-        cout<<"Dark counts  could not obtained from the file"<<endl;
+        std::cout<<"Dark counts  could not obtained from the file"<<std::endl;
 
 }
-vector<int>fSubTs0(vector<UInt_t>B1ts0,vector<UInt_t> B2ts0)
+std::vector<int>fSubTs0(std::vector<UInt_t>B1ts0,std::vector<UInt_t> B2ts0)
 {
     int Size=0;
-    vector<int> v;
+    std::vector<int> v;
     if(B1ts0.size()>B2ts0.size()) Size=B2ts0.size();else Size=B1ts0.size();
     Int_t Result;
     for (int i =0; i<Size;i++) {
@@ -259,8 +254,8 @@ vector<int>fSubTs0(vector<UInt_t>B1ts0,vector<UInt_t> B2ts0)
     return v;
 }
 
-void fCoinThreshold(vector<unsigned> *SIPMPairs,struct sAna *h) {
-    map <UInt_t, UShort_t> ThPassed;
+void fCoinThreshold(std::vector<unsigned> *SIPMPairs,struct sAna *h) {
+    std::map <UInt_t, UShort_t> ThPassed;
 
     // Get the SIPMs pass the Threshold
     Int_t SipmId = 0;
@@ -292,7 +287,7 @@ void fCoinThreshold(vector<unsigned> *SIPMPairs,struct sAna *h) {
 }
 
 
-void fApplyGain(vector<unsigned> &theCounts, vector<bool>Condition)
+void fApplyGain(std::vector<unsigned> &theCounts, std::vector<bool>Condition)
 {
     // Normalize to one trigger
     // And N = (1/G) * integral
@@ -307,29 +302,29 @@ void fApplyGain(vector<unsigned> &theCounts, vector<bool>Condition)
     }
 
 }
-void fNormalize (string FileName,TTree *t,Int_t Size)
+void fNormalize (std::string FileName,TTree *t,Int_t Size)
 {
 
-    string Board1Cond="mac5==" + to_string(board1Mac);
-    string Board2Cond="mac5==" + to_string(board2Mac);
+    std::string Board1Cond="mac5==" + std::to_string(board1Mac);
+    std::string Board2Cond="mac5==" + std::to_string(board2Mac);
     unsigned Board1Nent=t->GetEntries(Board1Cond.c_str());
     unsigned Board2Nent=t->GetEntries(Board2Cond.c_str());
-    vector<TH1F*> Scalled;
+    std::vector<TH1F*> Scalled;
 
-    string RFileName="output/Norm_"+FileName+".root";
+    std::string RFileName="output/Norm_"+FileName+".root";
     TFile *result=TFile::Open(RFileName.c_str(),"RECREATE");
-    string CombinedName;
-    string Name;
+    std::string CombinedName;
+    std::string Name;
 
     for (Int_t i=0; i<Size;i++)
     {
 
-        CombinedName= "ch_" + to_string(i)+"_can";
+        CombinedName= "ch_" + std::to_string(i)+"_can";
         TCanvas *c2=new TCanvas(CombinedName.c_str());
 
-        CombinedName= "ch_" + to_string(i)+"_"+ to_string(board1Mac);
+        CombinedName= "ch_" + std::to_string(i)+"_"+ std::to_string(board1Mac);
 
-        Name="chg[" + to_string(i) +"]";
+        Name="chg[" + std::to_string(i) +"]";
 
         TH1F *Board1 = new TH1F(CombinedName.c_str(),CombinedName.c_str(),100,0,2500);
         Board1->SetLineWidth(3);
@@ -338,8 +333,8 @@ void fNormalize (string FileName,TTree *t,Int_t Size)
         t->Draw(Name.c_str(), Board1Cond.c_str()); // Get histograms for board one
 
 
-        CombinedName= "ch_" + to_string(i)+"_"+ to_string(board2Mac);
-        Name="chg[" + to_string(i) +"]";
+        CombinedName= "ch_" + std::to_string(i)+"_"+ std::to_string(board2Mac);
+        Name="chg[" + std::to_string(i) +"]";
         TH1F *Board2 = new TH1F(CombinedName.c_str(),CombinedName.c_str(),100,0,2500);
         Board2->SetLineWidth(3);
         Board2->SetLineColor(kRed);
@@ -399,60 +394,32 @@ void fCombinedLoopAna(struct sAna *h) {
         fApplyGain(h->theCounts, Condition);
         fApplyGain(h->FilteredCounts, FilterCondition);
         fRunUpdate(h);
-        cout << "Event " << h->count << " is Done!" << endl;
+        std::cout << "Event " << h->count << " is Done!" << std::endl;
         h->count++;
         if(LimitEvents(h->count)) return;
 
     }
 
 }
-
-void NPair(struct sAna *h)
+/*void fLoopAna(struct sAna *h)
 {
-    if (h->TimedEvents && (h->Board1chg.size()==0 && h->Board2chg.size()==0))
-        return;
-    int sipmId = 0;
-    int n=1;
-    if (h->TimedEvents) n=2;
-    map<unsigned,vector<unsigned> SipmData;
-    int satCount=0;
-
-
-    for (Int_t i = 0; i <= n*febChannelsVec.size()c; i++) {
-        int sipmId = i;
-        if(n==1) {
-            if (h->mac5 == board2Mac && h->MotShipData) sipmId += 32;
-            if (h->MotShipData) h->chg[18] = h->chg[15];
-            if(!h->MotShipData) sipmId-=6;
-            SipmData.emplace(sipmId,chg[i]);
-            if(fisSIPMGood(sipmId,sipmDead))
-                if(h->chg[i]>=h->Th)
-                    satCount++;
-        }else {
-
-            h->Board1chg.at(18) = h->Board1chg.at(15);
-
-            if(sipmId>32) sipmId-=32;
-            if(i<32)
-            {
-                SipmData.emplace(i,h->Board1chg.at(sipmId));
-                if(fisSIPMGood(i,sipmDead)) if (h->Board1chg.at(sipmId) >= h->Th) satCount++;
-            }
-            else{
-                SipmData.emplace(i,h->Board2chg.at(sipmId));
-                if(fisSIPMGood(i,sipmDead)) if(h->Board2chg.at(sipmId)>=h->Th) satCount++;
-            }
-
-        }
-
-    }
-
-    if(satCount>=h->NofCoinc)
+    size_t sipmId(0);
+    unsigned count;
+    for (const auto& relId : febChannelsVec)
     {
-
+        int sipmId = relId;
+        //std::cout<<"RelID "<<relId<<std::endl;
+        if (h->mac5 == board2Mac && h->MotShipData) sipmId += 32;
+        if(!h->MotShipData) sipmId -=6;
+        if(sipmId==18 && h->MotShipData)
+            h->theCounts[sipmId] += h->chg[15];
+        else if (sipmId==15 && h->MotShipData)
+            h->theCounts[sipmId] += h->chg[18];
+        else h->theCounts[sipmId] += h->chg[relId];
     }
+    //Thinking about Changing
 }
-
+*/
 void fCoinLoop(struct sAna *h)
 {
     if (h->TimedEvents && (h->Board1chg.size()==0 && h->Board2chg.size()==0))
@@ -462,7 +429,7 @@ void fCoinLoop(struct sAna *h)
     if (h->TimedEvents) n=2;
 
     for (Int_t i = 0; i <= n*febChannelsVec.size() - h->NofCoinc; i += h->NofCoinc) {
-        vector<unsigned> SipmPair;
+        std::vector<unsigned> SipmPair;
         int sipmId = i;
         if(n==1) {
             if (h->mac5 == board2Mac && h->MotShipData) sipmId += 32;
@@ -509,8 +476,8 @@ void fTimeAnalysis(struct info *Board1,struct info *Board2) // Getting the Timed
     struct special { // Special Struct to help to time the Events
         Int_t Board1ts0;
         Int_t Board2ts0;
-        vector<UShort_t> Board1chg;
-        vector<UShort_t> Board2chg;
+        std::vector<UShort_t> Board1chg;
+        std::vector<UShort_t> Board2chg;
         Int_t Diffts0;
         info *First;
         info *Second;
@@ -519,7 +486,7 @@ void fTimeAnalysis(struct info *Board1,struct info *Board2) // Getting the Timed
         {
             if (item1.second.size()==0 || item2.second.size()==0)
             {
-                cout<< "no Channel info"<<endl;
+                std::cout<< "no Channel info"<<std::endl;
                 return ;
             }
             if(board1Mac==First->mac5)
@@ -535,9 +502,9 @@ void fTimeAnalysis(struct info *Board1,struct info *Board2) // Getting the Timed
                 Board1chg=item2.second;
                 Board2chg=item1.second;
 
-            }else {cout<<"else is here"<<endl;}
+            }else {std::cout<<"else is here"<<std::endl;}
             Int_t result=item1.first-item2.first;
-            Diffts0=abs(result);
+            Diffts0=std::abs(result);
 
         }
     };
@@ -565,9 +532,9 @@ void fTimeAnalysis(struct info *Board1,struct info *Board2) // Getting the Timed
 
     unsigned int Count;
     unsigned int EventID(0);
-    if(First->DataMap.size()==0 || Second->DataMap.size()==0) {cout<<"Timing Maps are empty"<<endl ;return;}
+    if(First->DataMap.size()==0 || Second->DataMap.size()==0) {std::cout<<"Timing Maps are empty"<<std::endl ;return;}
 
-    cout<<"Analyzing the timed Events..."<<endl;
+    std::cout<<"Analyzing the timed Events..."<<std::endl;
 
     for (auto const &item1     : First->DataMap) {
         Count=0;
@@ -587,21 +554,21 @@ void fTimeAnalysis(struct info *Board1,struct info *Board2) // Getting the Timed
 
             QualBoard1Data.emplace(temp.Diffts0,temp.Board1chg);
             QualBoard2Data.emplace(temp.Diffts0,temp.Board2chg);
-            //Second->DataMap.erase(Second->DataMap.begin());
+            Second->DataMap.erase(Second->DataMap.begin());
             if(LimitEvents(EventID)) break;
             EventID++;
         }
 
 
     }
-    cout<<"Total of "<< EventID<<" Qualified Time Events is collected !!"<<endl;
+    std::cout<<"Total of "<< EventID<<" Qualified Time Events is collected !!"<<std::endl;
 }
 
 void fWriteToFile(struct sAna hAna)
 {
-    fstream outfile(hAna.theEvdPath, ios::out | ios::in | ios::app);
-    string line;
-    string title="FileName TotalEntries EntBoard1 EntBoard2";
+    std::fstream outfile(hAna.theEvdPath, std::ios::out | std::ios::in | std::ios::app);
+    std::string line;
+    std::string title="FileName TotalEntries EntBoard1 EntBoard2";
 
     if(outfile.is_open())
     {
@@ -616,23 +583,23 @@ void fWriteToFile(struct sAna hAna)
 
 
 //------------------------------------------------------------------------
-void doAnalyze( string ptreepath,
-                string pFileName,
-                string pthePath,
-                string psipmGainPath,
-                string pSaveFile,
-                string pCut,
-                string pCombined,
-                string pTh,
-                string pNofCoinc)
+void doAnalyzeS( std::string ptreepath,
+                std::string pFileName,
+                std::string pthePath,
+                std::string psipmGainPath,
+                std::string pSaveFile,
+                std::string pCut,
+                std::string pCombined,
+                std::string pTh,
+                std::string pNofCoinc)
 {
-    cout << "\nAnalyzing Following File:  " + pFileName + ".root \n";
+    std::cout << "\nAnalyzing Following File:  " + pFileName + ".root \n";
 
     struct sAna hAna;
     struct info Board1_info;
     struct info Board2_info;
 
-    vector<string> splitLine;
+    std::vector<std::string> splitLine;
     boost::split(splitLine,pCombined,boost::is_any_of("_"));
 
     //Incoming Variables
@@ -641,11 +608,12 @@ void doAnalyze( string ptreepath,
     hAna.theTreePath     = ptreepath+pFileName+".root" ;
     hAna.theOutputPath   = pthePath+"ana_"+pFileName+".root";
     hAna.sipmGainPath    = psipmGainPath;
-    hAna.SaveFile        = stoi(pSaveFile);
-    hAna.Cut             = stoi(pCut);
-    hAna.Th              = stoi(pTh);
-    hAna.NofCoinc        = stoi(pNofCoinc);
-    hAna.NSIPMs          = stoi(splitLine[0]);
+    hAna.SaveFile        = std::stoi(pSaveFile);
+    hAna.Cut             = std::stoi(pCut);
+    hAna.Th              = std::stoi(pTh);
+    hAna.NofCoinc        = std::stoi(pNofCoinc);
+    hAna.NSIPMs          = std::stoi(splitLine[0]);
+    hAna.AveragedEvents  = true;
     if(hAna.NSIPMs>32){
         febChannelsVec       = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
 
@@ -657,8 +625,8 @@ void doAnalyze( string ptreepath,
 
     }
 
-    vector<unsigned> theCounts(hAna.n * febChannelsVec.size(), 0.);
-    vector<unsigned> FilteredCounts(hAna.n * febChannelsVec.size(), 0.);
+    std::vector<unsigned> theCounts(hAna.n * febChannelsVec.size(), 0.);
+    std::vector<unsigned> FilteredCounts(hAna.n * febChannelsVec.size(), 0.);
 
     TFile theFile(hAna.theTreePath.c_str(), "READ");
     TTree* theTree  = (TTree*)theFile.Get("mppc");
@@ -669,7 +637,7 @@ void doAnalyze( string ptreepath,
 
     if(hAna.MotShipData) fDeadChs(DeadSipmPath,hAna.sipmDead);
 
-    if (!theTree) { cout << "WARNING: Couldn't find mppc tree\n"; return; }
+    if (!theTree) { std::cout << "WARNING: Couldn't find mppc tree\n"; return; }
 
     theTree->SetBranchAddress("chg", &hAna.chg);
     theTree->SetBranchAddress("mac5", &hAna.mac5);
@@ -691,7 +659,7 @@ void doAnalyze( string ptreepath,
 
 
         if(hAna.MotShipData) {
-            vector<UShort_t> vchg(begin(hAna.chg),end(hAna.chg));
+            std::vector<UShort_t> vchg(std::begin(hAna.chg),std::end(hAna.chg));
             if (hAna.mac5 == board2Mac) {
 
                 hAna.Board2ts0.push_back(hAna.ts0);

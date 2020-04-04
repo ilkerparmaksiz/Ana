@@ -199,10 +199,8 @@ def NumofSIPMsandSpace (TablePath):
     return Values
 
 def Analyze(FilePath,OutPath,Analyze,Reconst,pixelPath,TablePath,Radius,sipmGainPath,SaveFile,Cut,Th,NofCoinc,TrueFile):
-    FilePath    = FilePath + "/"
-    TrueFile    = FilePath + TrueFile
     OutPath     = OutPath + "/"
-    Parts       = FilePath.split("/")
+    Parts       = FilePath.strip("/").split("/")
     LastItem    = len(Parts)-1
     Result      = Parts[LastItem].find('root')
 
@@ -215,9 +213,11 @@ def Analyze(FilePath,OutPath,Analyze,Reconst,pixelPath,TablePath,Radius,sipmGain
     Space       = Values[1]
     CombinedValues=NSIPM + "_" + Space + "_" + str(Radius)
 
-    if (Result==-1):
-        Files=ReadFiles(FilePath,"root") # Collects the files to analyze with root extension
 
+    if (Result==-1):
+        FilePath    = FilePath + "/"
+        Files=ReadFiles(FilePath,"root") # Collects the files to analyze with root extension
+        TrueFile    = FilePath + TrueFile
         if (len(Files)==0):
             print ("There are no .root files available to analyze")
             return
@@ -229,15 +229,15 @@ def Analyze(FilePath,OutPath,Analyze,Reconst,pixelPath,TablePath,Radius,sipmGain
             for file in Files[Path]:
 
                 if(Analyze):
-                    theCommand = 'root -l -q -b \'doAnalyze.C(\"'+Path+'\",\"'\
-                                                                 +file+'\",\"'\
-                                                                 +OutPath+'\",\"'\
-                                                                 +sipmGainPath+'\",\"'\
-                                                                 +SaveFile+'\",\"'\
-                                                                 +Cut+'\", \"'\
-                                                                 +CombinedValues+'\", \"'\
-                                                                 +Th+'\", \"' \
-                                                                 +NofCoinc+'\")\''
+                    theCommand = 'root -l -q -b \'doAnalyze.C(\"'+Path+'\",\"' \
+                                 +file+'\",\"' \
+                                 +OutPath+'\",\"' \
+                                 +sipmGainPath+'\",\"' \
+                                 +SaveFile+'\",\"' \
+                                 +Cut+'\", \"' \
+                                 +CombinedValues+'\", \"' \
+                                 +Th+'\", \"' \
+                                 +NofCoinc+'\")\''
 
                     os.system(theCommand)
 
@@ -248,16 +248,18 @@ def Analyze(FilePath,OutPath,Analyze,Reconst,pixelPath,TablePath,Radius,sipmGain
     else:
         FileName=Parts[LastItem].replace('.root','')
         AnaPath=FilePath.replace(Parts[LastItem],'')
+        TrueFile    = AnaPath + TrueFile
+
         if(Analyze):
-            theCommand = 'root -l -q -b \'doAnalyze.C(\"'+AnaPath+'\",\"'\
-                                                         +FileName+'\",\"' \
-                                                         +OutPath+'\",\"' \
-                                                         +sipmGainPath+'\",\"' \
-                                                         +SaveFile+'\",\"' \
-                                                         +Cut+'\", \"' \
-                                                         +CombinedValues+'\", \"' \
-                                                         +Th+'\", \"' \
-                                                         +NofCoinc+'\")\''
+            theCommand = 'root -l -q -b \'doAnalyze.C(\"'+AnaPath+'\",\"' \
+                         +FileName+'\",\"' \
+                         +OutPath+'\",\"' \
+                         +sipmGainPath+'\",\"' \
+                         +SaveFile+'\",\"' \
+                         +Cut+'\", \"' \
+                         +CombinedValues+'\", \"' \
+                         +Th+'\", \"' \
+                         +NofCoinc+'\")\''
             os.system(theCommand)
 
         if(Reconst):

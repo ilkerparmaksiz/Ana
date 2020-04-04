@@ -28,6 +28,39 @@ class Cfunctions {
         TH1I *exp;
         TH2F *chi2;
         TH2F *mli;
+    struct TTreeHelp{
+
+        vector<double>AnaExpY;
+        vector<double>AnaExpX;
+        vector<double>AnaErrX;
+        vector<double>AnaErrY;
+
+        vector<double>ActExpY;
+        vector<double>ActExpX;
+        vector<double>ActErrX;
+        vector<double>ActErrY;
+
+        vector<double>FiltExpY;
+        vector<double>FiltExpX;
+        vector<double>FiltErrX;
+        vector<double>FiltErrY;
+    };
+    void CreateTree(TTreeHelp *htr)
+    {
+        TTree* t = (TTree*)f->Get("reco");
+        if (!t)
+        {
+            t = new TTree("reco", "reco");
+            t->Branch("Histos",&htr);
+        }
+        else
+            t->SetBranchAddress("Histos",&htr);
+
+
+        t->Fill();
+        t->Write(t->GetName(), TObject::kWriteDelete);
+        t->Reset();
+    }
 
 
     void DrawCircle(){
@@ -38,6 +71,7 @@ class Cfunctions {
 
 
             if(!f) return;
+            struct TTreeHelp htr;
 
             Int_t n = 360;
             Double_t x, y;
@@ -81,7 +115,24 @@ class Cfunctions {
 
             TruePos->SetPoint(0,TrueX,TrueY);
             ExpPos->SetPoint(0,ExpX, ExpY);
+            if(Title.find("Ana")!=string::npos){
+                htr.AnaExpY.push_back(ExpY);
+                htr.AnaExpX.push_back(ExpX);
+                htr.AnaErrX.push_back(stod(Error[0]));
+                htr.AnaErrY.push_back(stod(Error[1]));
+            }else if(Title.find("Fill")!=string::npos){
+                htr.FiltExpY.push_back(ExpY);
+                htr.FiltExpX.push_back(ExpX);
+                htr.FiltErrX.push_back(stod(Error[0]));
+                htr.FiltErrY.push_back(stod(Error[1]));
+            }else if(Title.find("Act")!=string::npos){
+                htr.ActExpY.push_back(ExpY);
+                htr.ActExpX.push_back(ExpX);
+                htr.ActErrX.push_back(stod(Error[0]));
+                htr.ActErrY.push_back(stod(Error[1]));
+            }
 
+            this->CreateTree(&htr);
             std::string TrueLabel;
             std::string ExpLabel;
             TrueLabel = "TrueX= " + std::to_string(TrueX) + " , " + "TrueY= " + std::to_string(TrueY);
@@ -105,8 +156,6 @@ class Cfunctions {
             leg->Draw();
             this->CombinedTCanvas(c1);
 
-
-            //c1->Write();
 
     }
     std::vector<std::string> ErroEst()

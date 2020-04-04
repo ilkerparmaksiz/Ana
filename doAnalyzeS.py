@@ -25,7 +25,7 @@ FilePath="/home/ilker/Desktop/Analysis/Tests/Mothership_02_24_2020"
 #FilePath="/media/ilker/DATA/Mothership/data/8arg/"
 
 #Small Wheel Data
-FilePath="/home/ilker/Desktop/Analysis/Second_Data/Nov_21_2019/pos1_220_260th.root"
+#FilePath="/home/ilker/Desktop/Analysis/Second_Data/Nov_21_2019"
 
 def main():
     ''' FilePath            =>  Either a path to root file or to root files
@@ -44,8 +44,7 @@ def main():
     '''
     MotherShip = {                                          # Variables to Use for Mothership Data
         "FilePath"          :   FilePath,
-        #"OutPath"           :   "/media/ilker/DATA/Analysis/Mother/100EventsSingle",
-        "OutPath"           :   "output",
+        "OutPath"           :   "/media/ilker/DATA/Analysis/Mother/AveragedMother",
         "Analyze"           :   1,
         "Reconst"           :   1,
         "pixelPath"         :   "production/10mm/pixelization.txt",
@@ -54,15 +53,14 @@ def main():
         "sipmGainPath"      :   "files/sipmGains.txt",
         "SaveFile"          :   1,
         "Cut"               :   1,
-        "Th"                :   210,
+        "Th"                :   260,
         "NofCoinc"          :   4,
         "TrueFile"          :  "truePositions.txt"
     }
     SmallWheel = {                                          # Variables to Use for SmallWheel Data
         "FilePath"          :   FilePath,
         "OutPath"           :   "/media/ilker/DATA/Analysis/output",
-        #"OutPath"           :   "output",
-        "Analyze"           :   0,
+        "Analyze"           :   1,
         "Reconst"           :   1,
         "pixelPath"         :   "production/5mm/pixelization.txt",
         "TablePath"         :   "production/5mm/16_sipm/splinedOpRefTable.txt",
@@ -70,13 +68,13 @@ def main():
         "sipmGainPath"      :   "files/SmallWheelGains.txt",
         "SaveFile"          :   1,
         "Cut"               :   1,
-        "Th"                :   210,
+        "Th"                :   260,
         "NofCoinc"          :   4,
         "TrueFile"          :   "5s_TrueInfo.txt"
     }
 
     # For Analyzing Multiple or Single Files
-    fun.Analyze(**SmallWheel)
+    fun.AnalyzeS(**MotherShip)
 
 
 if __name__=="__main__":

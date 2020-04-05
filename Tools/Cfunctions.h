@@ -44,6 +44,11 @@ class Cfunctions {
         vector<double>FiltExpX;
         vector<double>FiltErrX;
         vector<double>FiltErrY;
+
+        vector<double>NPairExpY;
+        vector<double>NPairExpX;
+        vector<double>NPairErrX;
+        vector<double>NPairErrY;
     };
     void CreateTree(TTreeHelp *htr)
     {
@@ -130,9 +135,16 @@ class Cfunctions {
                 htr.ActExpX.push_back(ExpX);
                 htr.ActErrX.push_back(stod(Error[0]));
                 htr.ActErrY.push_back(stod(Error[1]));
+            }else if(Title.find("NPair")!=string::npos){
+                htr.NPairExpY.push_back(ExpY);
+                htr.NPairExpX.push_back(ExpX);
+                htr.NPairErrX.push_back(stod(Error[0]));
+                htr.NPairErrY.push_back(stod(Error[1]));
             }
 
             this->CreateTree(&htr);
+
+
             std::string TrueLabel;
             std::string ExpLabel;
             TrueLabel = "TrueX= " + std::to_string(TrueX) + " , " + "TrueY= " + std::to_string(TrueY);
@@ -146,6 +158,7 @@ class Cfunctions {
             leg->AddEntry("ErrY", ErrY.c_str(), "l");
             leg->SetEntrySeparation(0.2);
             leg->SetTextSize(0.03);
+
             mg->Add(gr);
             mg->Add(TruePos);
             mg->Add(ExpPos);
@@ -154,8 +167,10 @@ class Cfunctions {
             c1->DrawFrame(nR, nR, pR, pR)->SetTitle(MTitle.c_str());
             mg->Draw("p");
             leg->Draw();
-            this->CombinedTCanvas(c1);
 
+            // Just to Draw Some Plots not all
+            if(stof(Error[0])<150 && stof(Error[1])<150)
+                this->CombinedTCanvas(c1);
 
     }
     std::vector<std::string> ErroEst()

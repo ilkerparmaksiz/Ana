@@ -1,9 +1,16 @@
 #!/bin/python
 import sys
 import os
+import time
+
 sys.path.insert(1,'Tools/')
 import functions as fun
-
+from multiprocessing import Process
+from multiprocessing import Pool
+def info (title):
+    print (title)
+    print ("parent Process:",os.getppid())
+    print ("process id: ",os.getpid())
 
 #1st Data
 FilePath="/home/ilker/Desktop/Analysis/Tests/Mothership_02_24_2020"
@@ -28,6 +35,12 @@ FilePath="/home/ilker/Desktop/Analysis/Tests/Mothership_02_24_2020"
 
 #Small Wheel Data
 SFilePath="/home/ilker/Desktop/Analysis/Second_Data/Nov_21_2019"
+def info(title):
+    print title
+    print 'module name:', __name__
+    if hasattr(os, 'getppid'):  # only available on Unix
+        print 'parent process:', os.getppid()
+    print 'process id:', os.getpid()
 
 def main():
     ''' FilePath            =>  Either a path to root file or to root files
@@ -49,7 +62,7 @@ def main():
         "OutPath"           :   "/media/ilker/DATA/Analysis/Mother/100EventsSingle",
         #"OutPath"           :   "output",
         "Analyze"           :   1,
-        "Reconst"           :   0,
+        "Reconst"           :   1,
         "pixelPath"         :   "production/10mm/pixelization.txt",
         "TablePath"         :   "production/10mm/64_sipm/opRefTable.txt",
         "Radius"            :   50.5619,
@@ -78,8 +91,23 @@ def main():
     }
 
     # For Analyzing Multiple or Single Files
-    fun.Analyze(**SmallWheel)
+    #fun.Analyze(**SmallWheel)
     #fun.Analyze(**MotherShip)
+    DataPath    = FilePath + "/"
+    Files=fun.ReadFiles(DataPath,"root") # Collects the files to analyze with root extension
+    NumberofCores=4
+    for Path in Files :
+        print ("Total of  " + str(len(Files[Path])) + " Root Files Will be Analyzed!")
+        for file in Files[Path]:
+            info("Process for "+file)
+            pool = Pool(NumberofCores)              # start 4 worker processes
+            SingleFile= FilePath +"/" + file +".root"
+            MotherShip["FilePath"]=SingleFile
+            p=Process(target=fun.Analyze,kwargs=MotherShip)
+            p.start()
+            print "Starting to Analyze " + file +".root"
+        p.join()
+
 
 
 if __name__=="__main__":

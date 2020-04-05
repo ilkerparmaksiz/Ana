@@ -39,13 +39,15 @@ vector<bool> Condition         = {1, 0, 0}; //1 is on, 0 is off; Gain,LEDFilter,
 vector<bool> FilterCondition   = {1, 0, 0}; //1 is on, 0 is off; Gain,LEDFilter,DarkCount
 bool WriteToTextFile                = false; // Allows to Write Number of Entries to text File
 UInt_t MaxTimeDifference            = 200000000; //200 us
-Int_t  EventLimit                   = 0; // will limit events to 5
+Int_t  EventLimit                   = 5; // will limit events to 5
 
 //Applying Some Conditions such as Gain, LEDFilter and DarkCount Substraction. 0 is off
 struct sAna {
     // Get the ADC integrals
     vector<unsigned> theCounts;
     vector<unsigned> FilteredCounts;
+    vector<unsigned> NPairCounts;
+
     vector<unsigned> sipmDead;
     vector<unsigned> ActualCounts;
     vector<unsigned> DiffTime;
@@ -100,6 +102,7 @@ struct TTreeHelp{
     vector<unsigned>AnaCounts;
     vector<unsigned>FilteredCounts;
     vector<unsigned>DiffTime;
+    vector<unsigned> NPairCounts;
 
     /*vector<unsigned>DeadSIPM;
     vector<int> ts0sub;
@@ -162,10 +165,11 @@ void Clear(struct sAna *h)
 {
 
     h->DiffTime.clear();
-
     fill(h->FilteredCounts.begin(), h->FilteredCounts.end(), 0.0);
     fill(h->theCounts.begin(), h->theCounts.end(), 0.0);
     fill(h->ActualCounts.begin(), h->ActualCounts.end(), 0.0);
+    fill(h->NPairCounts.begin(), h->NPairCounts.end(), 0.0);
+
 
 
 }
@@ -174,7 +178,6 @@ bool fisSIPMGood(int SIPM,vector<unsigned>DeadSipm)
     if (find(DeadSipm.begin(),DeadSipm.end(),SIPM)==DeadSipm.end())
         return true;
     else return false;
-
 }
 
 bool is_empty(ifstream& pFile)
@@ -188,7 +191,7 @@ bool LimitEvents(unsigned int EventID)
             cout<<"Cutting the Events short at " <<EventID<<endl;
             return true;
         }
-    }else cout<<"EventLimit is zero"<<endl;
+    }
 
     return false;
 
@@ -203,6 +206,7 @@ void fRunUpdate(sAna *hAna)
         htr.ActualCounts      = hAna->ActualCounts;
         htr.FilteredCounts    = hAna->FilteredCounts;
         htr.DiffTime          = hAna->DiffTime;
+        htr.NPairCounts       = hAna->NPairCounts;
         /*htr.DeadSIPM          = hAna->sipmDead;
         htr.ts0sub            = hAna->ts0Substract;
         htr.Board1ts0         = hAna->Board1ts0;
@@ -266,10 +270,10 @@ void fCoinThreshold(vector<unsigned> *SIPMPairs,struct sAna *h) {
     Int_t SipmId = 0;
     for (int i = 0; i < SIPMPairs->size(); i++) {
         SipmId = SIPMPairs->at(i);
-        if (SipmId >= 32) SipmId -= 32;
+        if (SipmId > 31) SipmId -= 32;
         if (!h->MotShipData) SipmId += 6;
         if(h->TimedEvents) {
-            if (SIPMPairs->at(i) < 32) {
+            if (SIPMPairs->at(i) < 3) {
                 if ((h->Board1chg.at(SipmId) >= h->Th))
                     ThPassed.emplace(SIPMPairs->at(i), h->Board1chg.at(SipmId));
             } else {
@@ -380,6 +384,7 @@ void fCombinedLoopAna(struct sAna *h) {
             else if (sipmId == 15 && h->MotShipData)
                 h->theCounts[sipmId] += h->chg[18];
             else h->theCounts[sipmId] += h->chg[relId];
+
         }
     } else if(h->TimedEvents && (h->Board1chg.size() > 0 && h->Board2chg.size()>0)) {
         for (const auto &relId : febChannelsVec) {
@@ -398,6 +403,7 @@ void fCombinedLoopAna(struct sAna *h) {
         h->ActualCounts = h->theCounts;
         fApplyGain(h->theCounts, Condition);
         fApplyGain(h->FilteredCounts, FilterCondition);
+        fApplyGain(h->NPairCounts,FilterCondition);
         fRunUpdate(h);
         cout << "Event " << h->count << " is Done!" << endl;
         h->count++;
@@ -407,49 +413,60 @@ void fCombinedLoopAna(struct sAna *h) {
 
 }
 
-void NPair(struct sAna *h)
+void fNPair(struct sAna *h)
 {
     if (h->TimedEvents && (h->Board1chg.size()==0 && h->Board2chg.size()==0))
         return;
-    int sipmId = 0;
-    int n=1;
-    if (h->TimedEvents) n=2;
-    map<unsigned,vector<unsigned> SipmData;
+
     int satCount=0;
 
-
-    for (Int_t i = 0; i <= n*febChannelsVec.size()c; i++) {
+    vector<unsigned> CurrentCount(h->n*febChannelsVec.size(),0.);
+    for (unsigned int i = 0; i < h->n*febChannelsVec.size(); i++) {
         int sipmId = i;
-        if(n==1) {
+
+        if(h->n==1) {
             if (h->mac5 == board2Mac && h->MotShipData) sipmId += 32;
             if (h->MotShipData) h->chg[18] = h->chg[15];
-            if(!h->MotShipData) sipmId-=6;
-            SipmData.emplace(sipmId,chg[i]);
-            if(fisSIPMGood(sipmId,sipmDead))
-                if(h->chg[i]>=h->Th)
-                    satCount++;
+            if(!h->MotShipData) sipmId+=6;
+            if(sipmId<32) {
+                CurrentCount.at(i) += h->chg[sipmId];
+                if (fisSIPMGood(sipmId, sipmDead))
+                    if (h->chg[sipmId] >= h->Th)
+                        satCount++;
+            }else {
+                CurrentCount.at(sipmId) += h->chg[i];
+                if (fisSIPMGood(sipmId, sipmDead))
+                    if (h->chg[i] >= h->Th)
+                        satCount++;
+            }
+
+
         }else {
 
             h->Board1chg.at(18) = h->Board1chg.at(15);
 
-            if(sipmId>32) sipmId-=32;
-            if(i<32)
-            {
-                SipmData.emplace(i,h->Board1chg.at(sipmId));
+            if(sipmId>31) sipmId-=32;
+
+            if(i<32){
+                CurrentCount.at(i)+=h->Board1chg.at(sipmId);
                 if(fisSIPMGood(i,sipmDead)) if (h->Board1chg.at(sipmId) >= h->Th) satCount++;
+
             }
             else{
-                SipmData.emplace(i,h->Board2chg.at(sipmId));
+
+                CurrentCount.at(i)+=h->Board2chg.at(sipmId);
                 if(fisSIPMGood(i,sipmDead)) if(h->Board2chg.at(sipmId)>=h->Th) satCount++;
+
             }
 
         }
 
     }
+    if(satCount>=h->NofCoinc) {
+        for (unsigned int i = 0; i < CurrentCount.size(); i++) {
 
-    if(satCount>=h->NofCoinc)
-    {
-
+            h->NPairCounts.at(i) += CurrentCount.at(i);
+        }
     }
 }
 
@@ -457,14 +474,13 @@ void fCoinLoop(struct sAna *h)
 {
     if (h->TimedEvents && (h->Board1chg.size()==0 && h->Board2chg.size()==0))
         return;
-    int sipmId = 0;
-    int n=1;
-    if (h->TimedEvents) n=2;
 
-    for (Int_t i = 0; i <= n*febChannelsVec.size() - h->NofCoinc; i += h->NofCoinc) {
+    int sipmId = 0;
+
+    for (Int_t i = 0; i <= h->n*febChannelsVec.size() - h->NofCoinc; i += h->NofCoinc) {
         vector<unsigned> SipmPair;
         int sipmId = i;
-        if(n==1) {
+        if(h->n==1) {
             if (h->mac5 == board2Mac && h->MotShipData) sipmId += 32;
             if (h->MotShipData) h->chg[18] = h->chg[15];
 
@@ -492,6 +508,7 @@ void fTimeAnaLoop(struct sAna *h)
         h->Board2chg=secondValue;
         h->DiffTime.push_back(i.first);
         fCoinLoop(h);
+        fNPair(h);
         fCombinedLoopAna(h); // calling the loop to do time analysis
         count++;
     }
@@ -565,6 +582,7 @@ void fTimeAnalysis(struct info *Board1,struct info *Board2) // Getting the Timed
 
     unsigned int Count;
     unsigned int EventID(0);
+
     if(First->DataMap.size()==0 || Second->DataMap.size()==0) {cout<<"Timing Maps are empty"<<endl ;return;}
 
     cout<<"Analyzing the timed Events..."<<endl;
@@ -596,6 +614,7 @@ void fTimeAnalysis(struct info *Board1,struct info *Board2) // Getting the Timed
     }
     cout<<"Total of "<< EventID<<" Qualified Time Events is collected !!"<<endl;
 }
+
 
 void fWriteToFile(struct sAna hAna)
 {
@@ -646,7 +665,7 @@ void doAnalyze( string ptreepath,
     hAna.Th              = stoi(pTh);
     hAna.NofCoinc        = stoi(pNofCoinc);
     hAna.NSIPMs          = stoi(splitLine[0]);
-    if(hAna.NSIPMs>32){
+    if(hAna.NSIPMs>31){
         febChannelsVec       = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
 
     }else{
@@ -656,9 +675,11 @@ void doAnalyze( string ptreepath,
         hAna.MotShipData     = false;
 
     }
+    int TheSize              = hAna.n * febChannelsVec.size();
 
-    vector<unsigned> theCounts(hAna.n * febChannelsVec.size(), 0.);
-    vector<unsigned> FilteredCounts(hAna.n * febChannelsVec.size(), 0.);
+    vector<unsigned> theCounts(TheSize, 0.);
+    vector<unsigned> FilteredCounts(TheSize, 0.);
+    vector<unsigned> NPairCounts(TheSize,0.);
 
     TFile theFile(hAna.theTreePath.c_str(), "READ");
     TTree* theTree  = (TTree*)theFile.Get("mppc");
@@ -679,15 +700,21 @@ void doAnalyze( string ptreepath,
 
     hAna.theCounts=theCounts;
     hAna.FilteredCounts=FilteredCounts;
+    hAna.NPairCounts=NPairCounts;
 
     //if (hAna.MotShipData) fNormalize (pFileName,theTree,febChannelsVec.size());
-
     for (Long64_t jentry=0; jentry<hAna.nentries; jentry++)
     {
         theTree->GetEntry(jentry);
         if(LimitEvents(hAna.count)) break;
-        if (hAna.Cut) fCoinLoop(&hAna); //Fill This Before fCombinedLoopAna
+        if (hAna.Cut)
+        {
+            fCoinLoop(&hAna);
+            fNPair(&hAna);
+        } //Fill This Before fCombinedLoopAna
+
         fCombinedLoopAna(&hAna);
+
 
 
         if(hAna.MotShipData) {
@@ -722,6 +749,8 @@ void doAnalyze( string ptreepath,
         hAna.ActualCounts=hAna.theCounts;
         fApplyGain(hAna.theCounts,Condition);
         fApplyGain(hAna.FilteredCounts,FilterCondition);
+        fApplyGain(hAna.NPairCounts,FilterCondition);
+
         fRunUpdate(&hAna);
         hAna.count+=1;
     }

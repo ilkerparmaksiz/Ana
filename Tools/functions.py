@@ -5,6 +5,7 @@ import ROOT
 import sys
 from os import walk
 import os
+import time
 sys.setrecursionlimit(10000)
 
 
@@ -212,7 +213,7 @@ def Analyze(FilePath,OutPath,Analyze,Reconst,pixelPath,TablePath,Radius,sipmGain
     NSIPM       = Values[0]
     Space       = Values[1]
     CombinedValues=NSIPM + "_" + Space + "_" + str(Radius)
-
+    start=time.time()
 
     if (Result==-1):
         FilePath    = FilePath + "/"
@@ -265,3 +266,5 @@ def Analyze(FilePath,OutPath,Analyze,Reconst,pixelPath,TablePath,Radius,sipmGain
         if(Reconst):
             theCommand = 'root -l -b -q \'doRecoToFile.c(\"'+pixelPath+'\",\"'+TablePath+'\", \"'+OutPath+'\", \"'+FileName+'\", \"'+TrueFile+'\", \"'+CombinedValues+'\")\''
             os.system(theCommand)
+    endTime=time.time()
+    print ("TotalTime  :" + str(endTime-start) +"for" + FileName)

@@ -41,7 +41,21 @@ def info(title):
     if hasattr(os, 'getppid'):  # only available on Unix
         print 'parent process:', os.getppid()
     print 'process id:', os.getpid()
+def doParalel(DataPath):
+    DataPath    = DataPath + "/"
+    Files=fun.ReadFiles(DataPath,"root") # Collects the files to analyze with root extension
 
+    for Path in Files :
+        print ("Total of  " + str(len(Files[Path])) + " Root Files Will be Analyzed!")
+        for file in Files[Path]:
+            info("Process for "+file)
+            pool = Pool(NumberofCores)              # start 4 worker processes
+            SingleFile= DataPath +"/" + file +".root"
+            MotherShip["FilePath"]=SingleFile
+            p=Process(target=fun.Analyze,kwargs=MotherShip)
+            p.start()
+            print "Starting to Analyze " + file +".root"
+        p.join()
 def main():
     ''' FilePath            =>  Either a path to root file or to root files
         ThePath             =>  This is the Path to store analyzed and reconstructed files
@@ -59,8 +73,8 @@ def main():
     '''
     MotherShip = {                                          # Variables to Use for Mothership Data
         "FilePath"          :   FilePath,
-        "OutPath"           :   "/media/ilker/DATA/Analysis/Mother/100EventsSingle",
-        #"OutPath"           :   "output",
+        #"OutPath"           :   "/media/ilker/DATA/Analysis/Mother/100EventsSingle",
+        "OutPath"           :   "output",
         "Analyze"           :   1,
         "Reconst"           :   1,
         "pixelPath"         :   "production/10mm/pixelization.txt",
@@ -75,8 +89,8 @@ def main():
     }
     SmallWheel = {                                          # Variables to Use for SmallWheel Data
         "FilePath"          :   SFilePath,
-        #"OutPath"           :   "output",
-        "OutPath"           :   "/media/ilker/DATA/Analysis/Small_Wheel/SingleEvents",
+        "OutPath"           :   "output",
+        #"OutPath"           :   "/media/ilker/DATA/Analysis/Small_Wheel/SingleEvents",
         "Analyze"           :   1,
         "Reconst"           :   1,
         "pixelPath"         :   "production/5mm/pixelization.txt",
@@ -86,27 +100,35 @@ def main():
         "SaveFile"          :   1,
         "Cut"               :   1,
         "Th"                :   210,
-        "NofCoinc"          :   5,
+        "NofCoinc"          :   4,
         "TrueFile"          :   "5s_TrueInfo.txt"
     }
 
     # For Analyzing Multiple or Single Files
     #fun.Analyze(**SmallWheel)
     #fun.Analyze(**MotherShip)
-    DataPath    = FilePath + "/"
-    Files=fun.ReadFiles(DataPath,"root") # Collects the files to analyze with root extension
-    NumberofCores=4
-    for Path in Files :
-        print ("Total of  " + str(len(Files[Path])) + " Root Files Will be Analyzed!")
-        for file in Files[Path]:
-            info("Process for "+file)
-            pool = Pool(NumberofCores)              # start 4 worker processes
-            SingleFile= FilePath +"/" + file +".root"
-            MotherShip["FilePath"]=SingleFile
-            p=Process(target=fun.Analyze,kwargs=MotherShip)
-            p.start()
-            print "Starting to Analyze " + file +".root"
-        p.join()
+    FilePath="/home/ilker/Desktop/Analysis/Tests/Mothership_02_24_2020"
+    doParalel(FilePath)
+
+    FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_02_25_2020_2atm/"
+    doParalel(FilePath)
+
+    #3rd Data
+    FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_02_27_2020_2atm/"
+    doParalel(FilePath)
+
+    #4th Data
+    FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_03_06_2020_6atm/"
+    doParalel(FilePath)
+
+    #5th Data
+    FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_03_06_2020_v2/"
+    doParalel(FilePath)
+
+    #6th data
+    FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_03_10_2020_10atm_v2/"
+    doParalel(FilePath)
+
 
 
 

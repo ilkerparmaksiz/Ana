@@ -44,6 +44,7 @@ def info(title):
 def doParalel(DataPath,MotherShip):
     DataPath    = DataPath + "/"
     Files=fun.ReadFiles(DataPath,"root") # Collects the files to analyze with root extension
+    procesess=10
     for Path in Files :
         print ("Total of  " + str(len(Files[Path])) + " Root Files Will be Analyzed!")
         cn=0
@@ -54,11 +55,11 @@ def doParalel(DataPath,MotherShip):
             p=Process(target=fun.Analyze,kwargs=MotherShip)
             p.start()
             print "Starting to Analyze " + file +".root"
-            if(cn==4):
+            if(cn==procesess):
                 p.join()
                 cn=0
             cn+=1
-        if(cn<4):
+        if(cn<procesess):
             p.join()
 def main():
     ''' FilePath            =>  Either a path to root file or to root files

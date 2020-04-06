@@ -179,7 +179,6 @@ def ReadFiles(FilePath,FileExtension):
     for (dirpath,dirnames,filenames) in walk(FilePath):
             if(dirpath==FilePath):
                 Files[FilePath]=filenames
-    print Files
     for key in Files:
         for file in Files[key]:
             extension=file.split(".")

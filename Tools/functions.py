@@ -177,7 +177,9 @@ def ReadFiles(FilePath,FileExtension):
     FileExtension=FileExtension.replace('.','')
 
     for (dirpath,dirnames,filenames) in walk(FilePath):
-            Files[dirpath]=filenames
+            if(dirpath==FilePath):
+                Files[FilePath]=filenames
+    print Files
     for key in Files:
         for file in Files[key]:
             extension=file.split(".")
@@ -204,7 +206,6 @@ def Analyze(FilePath,OutPath,Analyze,Reconst,pixelPath,TablePath,Radius,sipmGain
     Parts       = FilePath.strip("/").split("/")
     LastItem    = len(Parts)-1
     Result      = Parts[LastItem].find('root')
-
     SaveFile    = str(SaveFile)
     Cut         = str(Cut)
     Th          = str(Th)
@@ -217,6 +218,7 @@ def Analyze(FilePath,OutPath,Analyze,Reconst,pixelPath,TablePath,Radius,sipmGain
 
     if (Result==-1):
         FilePath    = FilePath + "/"
+        OutPath=FilePath + OutPath
         Files=ReadFiles(FilePath,"root") # Collects the files to analyze with root extension
         TrueFile    = FilePath + TrueFile
         if (len(Files)==0):
@@ -250,6 +252,7 @@ def Analyze(FilePath,OutPath,Analyze,Reconst,pixelPath,TablePath,Radius,sipmGain
         FileName=Parts[LastItem].replace('.root','')
         AnaPath=FilePath.replace(Parts[LastItem],'')
         TrueFile    = AnaPath + TrueFile
+        OutPath=AnaPath + OutPath
 
         if(Analyze):
             theCommand = 'root -l -q -b \'doAnalyze.C(\"'+AnaPath+'\",\"' \

@@ -39,7 +39,7 @@ vector<bool> Condition         = {1, 0, 0}; //1 is on, 0 is off; Gain,LEDFilter,
 vector<bool> FilterCondition   = {1, 0, 0}; //1 is on, 0 is off; Gain,LEDFilter,DarkCount
 bool WriteToTextFile                = false; // Allows to Write Number of Entries to text File
 UInt_t MaxTimeDifference            = 200000000; //200 us
-Int_t  EventLimit                   = 5; // will limit events to 5
+Int_t  EventLimit                   = 0; // will limit events to 5
 
 //Applying Some Conditions such as Gain, LEDFilter and DarkCount Substraction. 0 is off
 struct sAna {

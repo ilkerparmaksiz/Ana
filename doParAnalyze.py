@@ -13,22 +13,22 @@ def info (title):
     print ("process id: ",os.getpid())
 
 #1st Data
-FilePath="/home/ilker/Desktop/Analysis/Tests/Mothership_02_24_2020"
+FilePath="/home/ilker/Desktop/DATA/Mothership_02_24_2020"
 
 #2nd Data
-#FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_02_25_2020_2atm/"
+#FilePath="/home/ilker/Desktop/DATA/MotherShip_02_25_2020_2atm/"
 
 #3rd Data
-#FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_02_27_2020_2atm/"
+#FilePath="/home/ilker/Desktop/DATA/MotherShip_02_27_2020_2atm/"
 
 #4th Data
-#FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_03_06_2020_6atm/"
+#FilePath="/home/ilker/Desktop/DATA/MotherShip_03_06_2020_6atm/"
 
 #5th Data
-#FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_03_06_2020_v2/"
+#FilePath="/home/ilker/Desktop/DATA/MotherShip_03_06_2020_v2/"
 
 #6th data
-#FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_03_10_2020_10atm_v2/"
+#FilePath="/home/ilker/Desktop/DATA/MotherShip_03_10_2020_10atm_v2/"
 
 #7th data
 #FilePath="/media/ilker/DATA/Mothership/data/8arg/"
@@ -41,21 +41,25 @@ def info(title):
     if hasattr(os, 'getppid'):  # only available on Unix
         print 'parent process:', os.getppid()
     print 'process id:', os.getpid()
-def doParalel(DataPath):
+def doParalel(DataPath,MotherShip):
     DataPath    = DataPath + "/"
     Files=fun.ReadFiles(DataPath,"root") # Collects the files to analyze with root extension
-
     for Path in Files :
         print ("Total of  " + str(len(Files[Path])) + " Root Files Will be Analyzed!")
+        cn=0
         for file in Files[Path]:
             info("Process for "+file)
-            pool = Pool(NumberofCores)              # start 4 worker processes
-            SingleFile= DataPath +"/" + file +".root"
+            SingleFile= DataPath + file +".root"
             MotherShip["FilePath"]=SingleFile
             p=Process(target=fun.Analyze,kwargs=MotherShip)
             p.start()
             print "Starting to Analyze " + file +".root"
-        p.join()
+            if(cn==4):
+                p.join()
+                cn=0
+            cn+=1
+        if(cn<4):
+            p.join()
 def main():
     ''' FilePath            =>  Either a path to root file or to root files
         ThePath             =>  This is the Path to store analyzed and reconstructed files
@@ -72,7 +76,7 @@ def main():
         TrueFile            =>  TruePositions of the Files
     '''
     MotherShip = {                                          # Variables to Use for Mothership Data
-        "FilePath"          :   FilePath,
+        "FilePath"          :   "/home/ilker/Desktop/Analysis/Second_Data/Nov_21_2019",
         #"OutPath"           :   "/media/ilker/DATA/Analysis/Mother/100EventsSingle",
         "OutPath"           :   "output",
         "Analyze"           :   1,
@@ -88,7 +92,7 @@ def main():
         "TrueFile"          :  "truePositions.txt"
     }
     SmallWheel = {                                          # Variables to Use for SmallWheel Data
-        "FilePath"          :   SFilePath,
+        "FilePath"          :   "",
         "OutPath"           :   "output",
         #"OutPath"           :   "/media/ilker/DATA/Analysis/Small_Wheel/SingleEvents",
         "Analyze"           :   1,
@@ -107,28 +111,37 @@ def main():
     # For Analyzing Multiple or Single Files
     #fun.Analyze(**SmallWheel)
     #fun.Analyze(**MotherShip)
-    FilePath="/home/ilker/Desktop/Analysis/Tests/Mothership_02_24_2020"
-    doParalel(FilePath)
+    Home="/home/ilker/Desktop/DATA/"
+    FilePath=Home+"Mothership_02_24_2020"
+    doParalel(FilePath,MotherShip)
 
-    FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_02_25_2020_2atm/"
-    doParalel(FilePath)
+    FilePath=Home+"MotherShip_02_25_2020_2atm"
+    doParalel(FilePath,MotherShip)
 
     #3rd Data
-    FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_02_27_2020_2atm/"
-    doParalel(FilePath)
+    FilePath=Home+"MotherShip_02_27_2020_2atm"
+    doParalel(FilePath,MotherShip)
 
     #4th Data
-    FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_03_06_2020_6atm/"
-    doParalel(FilePath)
+    FilePath=Home+"Mothership_03_05_2020_6atm"
+    doParalel(FilePath,MotherShip)
 
-    #5th Data
-    FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_03_06_2020_v2/"
-    doParalel(FilePath)
 
     #6th data
-    FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_03_10_2020_10atm_v2/"
-    doParalel(FilePath)
+    FilePath=Home+"MotherShip_03_10_2020_10atm"
+    doParalel(FilePath,MotherShip)
 
+    #5th Data
+    FilePath=Home+"MotherShip_03_06_2020_v2"
+    doParalel(FilePath,MotherShip)
+
+
+    FilePath=Home+"MotherShip_03_10_2020_10atm_v2"
+    doParalel(FilePath,MotherShip)
+
+    #8th data
+    FilePath=Home+"8arg"
+    doParalel(FilePath,MotherShip)
 
 
 

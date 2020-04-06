@@ -6,7 +6,7 @@ import functions as fun
 
 
 #1st Data
-FilePath="/home/ilker/Desktop/Analysis/Tests/Mothership_02_24_2020"
+FilePath="/home/ilker/Desktop/DATA/Mothership_02_24_2020"
 
 #2nd Data
 #FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_02_25_2020_2atm/"
@@ -46,10 +46,10 @@ def main():
     '''
     MotherShip = {                                          # Variables to Use for Mothership Data
         "FilePath"          :   FilePath,
-        "OutPath"           :   "/media/ilker/DATA/Analysis/Mother/100EventsSingle",
-        #"OutPath"           :   "output",
+        #"OutPath"           :   "/media/ilker/DATA/Analysis/Mother/100EventsSingle",
+        "OutPath"           :   "output",
         "Analyze"           :   1,
-        "Reconst"           :   0,
+        "Reconst"           :   1,
         "pixelPath"         :   "production/10mm/pixelization.txt",
         "TablePath"         :   "production/10mm/64_sipm/opRefTable.txt",
         "Radius"            :   50.5619,
@@ -78,8 +78,8 @@ def main():
     }
 
     # For Analyzing Multiple or Single Files
-    fun.Analyze(**SmallWheel)
-    #fun.Analyze(**MotherShip)
+    #fun.Analyze(**SmallWheel)
+    fun.Analyze(**MotherShip)
 
 
 if __name__=="__main__":

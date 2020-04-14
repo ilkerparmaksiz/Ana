@@ -181,6 +181,7 @@ def ReadFiles(FilePath,FileExtension):
                 Files[FilePath]=filenames
     for key in Files:
         for file in Files[key]:
+
             extension=file.split(".")
             if (extension[1]==FileExtension):
                 QualFileNames.append(extension[0])
@@ -219,6 +220,7 @@ def Analyze(FilePath,OutPath,Analyze,Reconst,pixelPath,TablePath,Radius,sipmGain
         FilePath    = FilePath + "/"
         OutPath=FilePath + OutPath
         Files=ReadFiles(FilePath,"root") # Collects the files to analyze with root extension
+
         TrueFile    = FilePath + TrueFile
         if (len(Files)==0):
             print ("There are no .root files available to analyze")
@@ -269,4 +271,4 @@ def Analyze(FilePath,OutPath,Analyze,Reconst,pixelPath,TablePath,Radius,sipmGain
             theCommand = 'root -l -b -q \'doRecoToFile.c(\"'+pixelPath+'\",\"'+TablePath+'\", \"'+OutPath+'\", \"'+FileName+'\", \"'+TrueFile+'\", \"'+CombinedValues+'\")\''
             os.system(theCommand)
     endTime=time.time()
-    print ("TotalTime  :" + str(endTime-start) +"for" + FileName)
+    print ("TotalTime  :" + str(endTime-start) +" for " + FileName)

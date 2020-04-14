@@ -12,13 +12,14 @@
 #include <string>
 #include <boost/algorithm/string.hpp>
 
-
+using namespace std;
 class Cfunctions {
     public:
-        std::string Title;
+        string Title;
         TFile * f;
-        std::string FileName;
-        std::string TrueFilePath;
+        string FileName;
+        string TrueFilePath;
+        string FilePath;
         Double_t    R;
         Double_t dif = 30;
         Double_t TrueX;
@@ -28,6 +29,11 @@ class Cfunctions {
         TH1I *exp;
         TH2F *chi2;
         TH2F *mli;
+        bool CDraw=true;
+        bool SaveImg=true;
+        bool SaveFile=true;
+
+
     struct TTreeHelp{
 
         vector<double>AnaExpY;
@@ -80,13 +86,13 @@ class Cfunctions {
 
             Int_t n = 360;
             Double_t x, y;
-            std::string sdev;
+            string sdev;
 
             Double_t pR = R + dif;
             Double_t nR = -R - dif;
-            std::vector<std::string> Error;
-            std::string ErrX;
-            std::string ErrY;
+            vector<string> Error;
+            string ErrX;
+            string ErrY;
 
             Error=ErroEst();
             ErrX="ErrX= " + (Error[0]) ;
@@ -141,14 +147,14 @@ class Cfunctions {
                 htr.NPairErrX.push_back(stod(Error[0]));
                 htr.NPairErrY.push_back(stod(Error[1]));
             }
+            if(SaveFile)
+                this->CreateTree(&htr);
 
-            this->CreateTree(&htr);
 
-
-            std::string TrueLabel;
-            std::string ExpLabel;
-            TrueLabel = "TrueX= " + std::to_string(TrueX) + " , " + "TrueY= " + std::to_string(TrueY);
-            ExpLabel = "ExpX= " + std::to_string(ExpX) + " , " + "ExpY= " + std::to_string(ExpY);
+            string TrueLabel;
+            string ExpLabel;
+            TrueLabel = "TrueX= " + to_string(TrueX) + " , " + "TrueY= " + to_string(TrueY);
+            ExpLabel = "ExpX= " + to_string(ExpX) + " , " + "ExpY= " + to_string(ExpY);
             TLegend *leg;
             leg = new TLegend(0.1,0.75,0.9,0.9);
             leg->SetHeader("Results");
@@ -163,31 +169,33 @@ class Cfunctions {
             mg->Add(TruePos);
             mg->Add(ExpPos);
 
-            std::string MTitle=Title+"_TrueVsExp";
+            string MTitle=Title+"_TrueVsExp";
             c1->DrawFrame(nR, nR, pR, pR)->SetTitle(MTitle.c_str());
             mg->Draw("p");
             leg->Draw();
 
             // Just to Draw Some Plots not all
-            if(stof(Error[0])<150 && stof(Error[1])<150)
+            if((abs(stof(Error[0]))<150 && abs(stof(Error[1]))<150) || CDraw)
+            {
                 this->CombinedTCanvas(c1);
 
+            }
     }
-    std::vector<std::string> ErroEst()
+    vector<string> ErroEst()
     {
         Double_t ErrX;
         Double_t ErrY;
         ReadTrueFile();
-        std::vector<std::string> Result;
+        vector<string> Result;
         if(TrueX==0){ TrueX+=1;ExpX+=1; }
         if(TrueY==0){ TrueY+=1;ExpY+=1; }
 
 
-        ErrX=std::abs(ExpX-TrueX)/TrueX*100;
-        ErrY=std::abs(ExpY-TrueY)/TrueY*100;
+        ErrX=abs(ExpX-TrueX/TrueX)*100;
+        ErrY=abs(ExpY-TrueY/TrueY)*100;
 
-        Result.push_back(std::to_string(round(ErrX * 100) / 100.0));
-        Result.push_back(std::to_string(round(ErrY * 100) / 100.0));
+        Result.push_back(to_string(round(ErrX * 100) / 100.0));
+        Result.push_back(to_string(round(ErrY * 100) / 100.0));
         return Result;
 
     }
@@ -196,18 +204,18 @@ class Cfunctions {
     {
         string line;
         ifstream myfile (TrueFilePath);
-        std::vector<std::string> splitLine;
+        vector<string> splitLine;
         unsigned count(0);
         if (myfile.is_open())
         {
-            std::getline (myfile,line);
-            while ( std::getline (myfile,line) )
+            getline (myfile,line);
+            while ( getline (myfile,line) )
             {
                 boost::split(splitLine,line,boost::is_any_of(" "));
                 if(splitLine[0].compare(FileName)==0){
 
-                    TrueX=std::stof(splitLine[1]);
-                    TrueY=std::stof(splitLine[2]);
+                    TrueX=stof(splitLine[1]);
+                    TrueY=stof(splitLine[2]);
                     myfile.close();
                     count++;
                     break;
@@ -216,7 +224,7 @@ class Cfunctions {
             }
             if (count==0)
             {
-                std::cout<< "could not find the true position!";
+                cout<< "could not find the true position!";
                 return;
             }
             myfile.close();
@@ -226,26 +234,61 @@ class Cfunctions {
 
     void CombinedTCanvas(TCanvas *c2)
     {
-            std::string Name=Title+"_Combined";
-        auto *mc1=new TCanvas(Name.c_str(),Name.c_str(),1000,1000);
+            string Name=Title+"Combined";
+        auto *mc1=new TCanvas(Name.c_str(),Name.c_str(),150,10,800,800);
+
+        mc1->SetTitle(Name.c_str());
         mc1->Divide(2,2,0.01,0.01);
+        mc1->SetTopMargin(100);
         mc1->cd(1);
-        gPad->SetTickx(3);
+        gPad->SetTickx(2);
+        gPad->SetTicky(2);
         chi2->Draw("colz");
         mc1->cd(2);
-        gPad->SetTickx(3);
+        gPad->SetTickx(2);
+        gPad->SetTicky(2);
         mli->Draw("colz");
         mc1->cd(3);
+        gPad->SetTickx(2);
+        gPad->SetTicky(2);
+        exp->GetYaxis()->SetTitleOffset(1.55);
         exp->Draw();
         mc1->cd(4);
+        gPad->SetTickx(2);
         gPad->SetTicky(2);
         c2->DrawClonePad();
         gPad->Update();
-        mc1->Write();
+        mc1->cd();
+
+        auto *newpad=new TPad("newpad","a transparent pad",1,1,0,0);
+        newpad->SetFillStyle(4000);
+        newpad->Draw();
+        newpad->cd();
+        string n=FileName;
+        /*auto *title = new TPaveLabel(0.1,0.96,0.9,1,n.c_str());
+        title->SetFillColor(16);
+        title->SetTextFont(42);
+        title->Draw();
+         */
+        TPaveLabel *title = new TPaveLabel(.4,.95,.60,.99,n.c_str(),"brndc");
+        title->Draw();
+        gPad->Update();
 
 
+
+        /*if(SaveImg && Title.find("Act")!=string::npos){
+            string ImageName=FilePath+FileName+Name+".jpg";
+            mc1->Print(ImageName.c_str());
+        }*/
+        string ImageName=FilePath+FileName+Name+".jpg";
+        mc1->Print(ImageName.c_str());
+
+        if(SaveFile)
+            mc1->Write();
 
     }
+
+
 };
 
 

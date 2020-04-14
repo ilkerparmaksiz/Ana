@@ -150,6 +150,8 @@ namespace majreco {
          */
         float CalculateLL();
 
+
+
         float CalculateMean(const size_t &sipmID);
 
         /**

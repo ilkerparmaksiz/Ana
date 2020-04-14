@@ -122,7 +122,12 @@ void LoadPixelization(RecoHelper *recoHelper)
         getline(f, string3);
 
         unsigned pixelID = stoi(string1);
-        float    x       = stof(string2);
+        float    x;
+
+        if(recoHelper->NSIPMs>32)
+            x=stof(string2)*cos(3.14);
+        else
+            x=stof(string2);
         float    y       = stof(string3);
         thePixelCount++;
         if (thePixelCount == 1) aPixelPos = x;
@@ -139,6 +144,7 @@ void LoadPixelization(RecoHelper *recoHelper)
 
         recoHelper->thePixelVec->emplace_back(pixelID, x, y, r, thetaDeg);
         recoHelper->thePixelVec->back().SetSize(recoHelper->thePixelSpacing);
+        //cout<<"SizeofSIPMs --> " <<recoHelper->NSIPMs<<endl;
     }
 
     f.close();
@@ -231,6 +237,7 @@ void Reconstruct( RecoHelper  *recoHelper, Cfunctions *fun)
         FileName=recoHelper->ThePath+"Reco_"+recoHelper->FileName+".root";
         TFile f(FileName.c_str(), "UPDATE");
         fun->f=&f;
+        fun->FilePath=recoHelper->ThePath;
         string Chi2Name=recoHelper->ImageName+"_Chi2";
         string MLIName=recoHelper->ImageName+"_MLI";
         string expDataName=recoHelper->ImageName+"_expData";
@@ -245,7 +252,8 @@ void Reconstruct( RecoHelper  *recoHelper, Cfunctions *fun)
 
         // Write the expected data
         auto expdata = theReconstructor.ExpectedCounts();
-        TH1I h(expDataName.c_str(), expDataName.c_str(), expdata.size(), 0.5, expdata.size()+0.5);
+        string expTitle=expDataName+";SIPM id;Activity";
+        TH1I h(expDataName.c_str(), expTitle.c_str(), expdata.size(), 0.5, expdata.size()+0.5);
         unsigned int Tcoun=0;
         for (const auto& d : expdata) {
             h.SetBinContent(d.first, d.second);

@@ -6,7 +6,7 @@ import functions as fun
 
 
 #1st Data
-FilePath="/home/ilker/Desktop/DATA/Mothership_02_24_2020"
+FilePath="/media/ilker/DATA/Analysis/Mother/DATA/Mothership_02_24_2020"
 
 #2nd Data
 #FilePath="/home/ilker/Desktop/Analysis/Mothership/CAEN_Board/evd/Tests/MotherShip_02_25_2020_2atm/"
@@ -47,7 +47,7 @@ def main():
     MotherShip = {                                          # Variables to Use for Mothership Data
         "FilePath"          :   FilePath,
         #"OutPath"           :   "/media/ilker/DATA/Analysis/Mother/100EventsSingle",
-        "OutPath"           :   "output",
+        "OutPath"           :   "output2",
         "Analyze"           :   1,
         "Reconst"           :   1,
         "pixelPath"         :   "production/10mm/pixelization.txt",
@@ -73,7 +73,7 @@ def main():
         "SaveFile"          :   1,
         "Cut"               :   1,
         "Th"                :   210,
-        "NofCoinc"          :   5,
+        "NofCoinc"          :   4,
         "TrueFile"          :   "5s_TrueInfo.txt"
     }
 

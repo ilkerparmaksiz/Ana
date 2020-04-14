@@ -78,7 +78,7 @@ struct sAna {
     UInt_t   ts0;
     UInt_t   count=0;
     bool TimedEvents=true;
-    bool   AveragedEvents=false;
+    bool   AveragedEvents=true;
     int n                               = 2;
 
 
@@ -263,36 +263,24 @@ vector<int>fSubTs0(vector<UInt_t>B1ts0,vector<UInt_t> B2ts0)
     return v;
 }
 
-void fCoinThreshold(vector<unsigned> *SIPMPairs,struct sAna *h) {
-    map <UInt_t, UShort_t> ThPassed;
+void fCoinThreshold(vector<unsigned> *SIPMPairs,struct sAna *h,unsigned int &PassCnt) {
 
     // Get the SIPMs pass the Threshold
     Int_t SipmId = 0;
+    unsigned int cnt=0;
     for (int i = 0; i < SIPMPairs->size(); i++) {
         SipmId = SIPMPairs->at(i);
         if (SipmId > 31) SipmId -= 32;
         if (!h->MotShipData) SipmId += 6;
         if(h->TimedEvents) {
-            if (SIPMPairs->at(i) < 3) {
-                if ((h->Board1chg.at(SipmId) >= h->Th))
-                    ThPassed.emplace(SIPMPairs->at(i), h->Board1chg.at(SipmId));
-            } else {
-                if ((h->Board2chg.at(SipmId) >= h->Th))
-                    ThPassed.emplace(SIPMPairs->at(i), h->Board2chg.at(SipmId));
-            }
-        }else{
-
-            if ((h->chg[SipmId] >= h->Th))
-                ThPassed.emplace(SIPMPairs->at(i), h->chg[SipmId]);
+            if (SIPMPairs->at(i) < 32 && h->Board1chg.at(SipmId) >= h->Th) cnt++;
+            else if (SIPMPairs->at(i) > 31 && h->Board2chg.at(SipmId) >= h->Th ) cnt++;
         }
+        else if (!h->TimedEvents && h->chg[SipmId] >= h->Th) cnt++;
     }
+    if(cnt>=h->NofCoinc-1)
+        PassCnt++;
 
-    //Apply the Values to Counts
-    if ((ThPassed.size() == SIPMPairs->size() || ThPassed.size() == (h->NofCoinc - 1))) {
-        for (const auto &item : ThPassed)
-            h->FilteredCounts[item.first] += item.second;
-
-    }
 }
 
 
@@ -393,10 +381,10 @@ void fCombinedLoopAna(struct sAna *h) {
                 h->theCounts[sipmId] += h->Board1chg.at(15);
             else if (sipmId == 15)
                 h->theCounts[sipmId] += h->Board1chg.at(18);
-            else {
+            else
                 h->theCounts[sipmId] += h->Board1chg.at(relId);
-                h->theCounts[sipmId + 32] += h->Board2chg.at(relId);
-            }
+            h->theCounts[sipmId + 32] += h->Board2chg.at(relId);
+
         }
     }else return;
     if(!h->AveragedEvents && h->theCounts.size()!=0) {
@@ -428,35 +416,31 @@ void fNPair(struct sAna *h)
             if (h->mac5 == board2Mac && h->MotShipData) sipmId += 32;
             if (h->MotShipData) h->chg[18] = h->chg[15];
             if(!h->MotShipData) sipmId+=6;
-            if(sipmId<32) {
-                CurrentCount.at(i) += h->chg[sipmId];
-                if (fisSIPMGood(sipmId, sipmDead))
-                    if (h->chg[sipmId] >= h->Th)
-                        satCount++;
-            }else {
-                CurrentCount.at(sipmId) += h->chg[i];
-                if (fisSIPMGood(sipmId, sipmDead))
+
+                if (fisSIPMGood(sipmId, h->sipmDead)){
+                    CurrentCount.at(sipmId) += h->chg[i];
                     if (h->chg[i] >= h->Th)
                         satCount++;
-            }
-
+                }
 
         }else {
 
             h->Board1chg.at(18) = h->Board1chg.at(15);
-
             if(sipmId>31) sipmId-=32;
 
             if(i<32){
-                CurrentCount.at(i)+=h->Board1chg.at(sipmId);
-                if(fisSIPMGood(i,sipmDead)) if (h->Board1chg.at(sipmId) >= h->Th) satCount++;
 
+                if(fisSIPMGood(i,h->sipmDead)) {
+                    if (h->Board1chg.at(i) >= h->Th) satCount++;
+                    CurrentCount.at(i)+=h->Board1chg.at(i);
+                }
             }
             else{
 
-                CurrentCount.at(i)+=h->Board2chg.at(sipmId);
-                if(fisSIPMGood(i,sipmDead)) if(h->Board2chg.at(sipmId)>=h->Th) satCount++;
-
+                if(fisSIPMGood(i,h->sipmDead)){
+                    if(h->Board2chg.at(sipmId)>=h->Th) satCount++;
+                    CurrentCount.at(i)+=h->Board2chg.at(sipmId);
+                }
             }
 
         }
@@ -477,7 +461,9 @@ void fCoinLoop(struct sAna *h)
 
     int sipmId = 0;
 
-    for (Int_t i = 0; i <= h->n*febChannelsVec.size() - h->NofCoinc; i += h->NofCoinc) {
+    unsigned int PassCnt=0;
+
+    for (Int_t i = 0; i <= h->n*febChannelsVec.size() - h->NofCoinc; i ++) {
         vector<unsigned> SipmPair;
         int sipmId = i;
         if(h->n==1) {
@@ -487,10 +473,35 @@ void fCoinLoop(struct sAna *h)
         }else h->Board1chg.at(18) = h->Board1chg.at(15);
 
         //Deals With Coincidence
-        for (Int_t k = 0; k < h->NofCoinc; k++)
-            if (fisSIPMGood(sipmId + k, h->sipmDead)) SipmPair.push_back(sipmId + k);
-        if (SipmPair.size() > 1 ) fCoinThreshold(&SipmPair,h);
+        for (Int_t k = 0; k < h->NofCoinc; k++){
 
+            if (fisSIPMGood(sipmId + k, h->sipmDead)) SipmPair.push_back(sipmId + k);
+        }
+        if (SipmPair.size() > 2 ) fCoinThreshold(&SipmPair,h,PassCnt);
+    }
+
+    if (PassCnt>0) {
+        for (Int_t i = 0; i <= h->n * febChannelsVec.size(); i++) {
+            int sipmId = i;
+            if (h->n == 1) {
+                if (h->mac5 == board2Mac && h->MotShipData) sipmId += 32;
+                if (h->MotShipData) h->chg[18] = h->chg[15];
+
+                if(fisSIPMGood(sipmId, h->sipmDead))
+                    h->FilteredCounts[sipmId]+=h->chg[i];
+            } else{
+
+                h->Board1chg.at(18) = h->Board1chg.at(15);
+                if(fisSIPMGood(sipmId, h->sipmDead)) {
+                    if (i < 32) h->FilteredCounts[i] += h->Board1chg[i];
+                    else {
+                        sipmId -= 32;
+                        h->FilteredCounts[i] += h->Board2chg[sipmId];
+                    }
+                }
+            }
+
+        }
     }
 }
 

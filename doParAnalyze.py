@@ -41,10 +41,9 @@ def info(title):
     if hasattr(os, 'getppid'):  # only available on Unix
         print 'parent process:', os.getppid()
     print 'process id:', os.getpid()
-def doParalel(DataPath,MotherShip):
+def doParalel(DataPath,MotherShip,procesess):
     DataPath    = DataPath + "/"
     Files=fun.ReadFiles(DataPath,"root") # Collects the files to analyze with root extension
-    procesess=10
     for Path in Files :
         print ("Total of  " + str(len(Files[Path])) + " Root Files Will be Analyzed!")
         cn=0
@@ -79,7 +78,7 @@ def main():
     MotherShip = {                                          # Variables to Use for Mothership Data
         "FilePath"          :   "/home/ilker/Desktop/Analysis/Second_Data/Nov_21_2019",
         #"OutPath"           :   "/media/ilker/DATA/Analysis/Mother/100EventsSingle",
-        "OutPath"           :   "output",
+        "OutPath"           :   "output2",
         "Analyze"           :   1,
         "Reconst"           :   1,
         "pixelPath"         :   "production/10mm/pixelization.txt",
@@ -106,44 +105,49 @@ def main():
         "Cut"               :   1,
         "Th"                :   210,
         "NofCoinc"          :   4,
-        "TrueFile"          :   "5s_TrueInfo.txt"
+        "TrueFile"          :   "truePositions.txt"
     }
 
     # For Analyzing Multiple or Single Files
     #fun.Analyze(**SmallWheel)
     #fun.Analyze(**MotherShip)
-    Home="/home/ilker/Desktop/DATA/"
+
+    Home="/media/ilker/DATA/Analysis/Mother/DATA/"
+    pro=15
     FilePath=Home+"Mothership_02_24_2020"
-    doParalel(FilePath,MotherShip)
+    doParalel(FilePath,MotherShip,pro)
 
     FilePath=Home+"MotherShip_02_25_2020_2atm"
-    doParalel(FilePath,MotherShip)
+    doParalel(FilePath,MotherShip,pro)
 
     #3rd Data
     FilePath=Home+"MotherShip_02_27_2020_2atm"
-    doParalel(FilePath,MotherShip)
+    doParalel(FilePath,MotherShip,pro)
 
-    #4th Data
+
+    #4rd Data
     FilePath=Home+"Mothership_03_05_2020_6atm"
-    doParalel(FilePath,MotherShip)
+    doParalel(FilePath,MotherShip,pro)
 
-
-    #6th data
-    FilePath=Home+"MotherShip_03_10_2020_10atm"
-    doParalel(FilePath,MotherShip)
 
     #5th Data
     FilePath=Home+"MotherShip_03_06_2020_v2"
-    doParalel(FilePath,MotherShip)
+    doParalel(FilePath,MotherShip,pro)
 
 
+    #6th Data
+    FilePath=Home+"MotherShip_03_10_2020_10atm"
+    doParalel(FilePath,MotherShip,pro)
+
+
+
+    #6th Data
     FilePath=Home+"MotherShip_03_10_2020_10atm_v2"
-    doParalel(FilePath,MotherShip)
+    doParalel(FilePath,MotherShip,pro)
 
-    #8th data
-    FilePath=Home+"8arg"
-    doParalel(FilePath,MotherShip)
 
+    FilePath=Home+"MotherShip_03_06_2020_6atm"
+    doParalel(FilePath,MotherShip,pro)
 
 
 if __name__=="__main__":
